@@ -1,0 +1,460 @@
+-- Eclipse X Hub | MM2 ULTIMATE 2025 Edition
+-- by Copilot | v1.0 | Самый топовый релиз!
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+    Name = "🕶️ Eclipse X | MM2 ULTIMATE",
+    LoadingTitle = "Eclipse X Hub запускается...",
+    LoadingSubtitle = "Лучший скрипт MM2 2025",
+    ConfigurationSaving = {Enabled = true, FolderName = "EclipseX_MM2", FileName = "Config"},
+    KeySystem = false
+})
+
+-----------------------------------------------------------
+-- == Глобальные переменные и настройки ==
+-----------------------------------------------------------
+local Camera = workspace.CurrentCamera
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local ESPEnabled, GunESPEnabled, ChamsEnabled, TracerEnabled, HealthBarEnabled, DistanceEnabled = false, false, false, false, false, false
+local BoxEnabled, NameEnabled = true, true
+local AutoFarmActive, AutoGunActive, AntiKickActive, NoclipActive, FlyActive, SuperJumpActive, SpeedActive, AvoidMurdererActive = false, false, false, false, false, false, false, false
+local ESPObjects = {}
+local Tracers = {}
+local HealthBars = {}
+local CoinESPEnabled = false
+local PlayerList = {}
+local RoleColors = {
+    Murderer = Color3.fromRGB(255, 0, 0),
+    Innocent = Color3.fromRGB(0, 255, 0),
+    Sheriff = Color3.fromRGB(0, 150, 255),
+    Gun = Color3.fromRGB(255, 255, 0),
+    Coin = Color3.fromRGB(255, 255, 80),
+}
+
+-----------------------------------------------------------
+-- == Утилиты == 
+-----------------------------------------------------------
+local function GetRole(player)
+    if player:FindFirstChild("Role") then
+        return player.Role.Value
+    elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
+        return "Sheriff"
+    elseif player.Backpack:FindFirstChild("Knife") or (player.Character and player.Character:FindFirstChild("Knife")) then
+        return "Murderer"
+    else
+        return "Innocent"
+    end
+end
+
+local function UpdatePlayerList()
+    PlayerList = {}
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LP then
+            table.insert(PlayerList, player.Name)
+        end
+    end
+end
+
+Players.PlayerAdded:Connect(UpdatePlayerList)
+Players.PlayerRemoving:Connect(UpdatePlayerList)
+UpdatePlayerList()
+
+-----------------------------------------------------------
+-- == ESP и визуал ==
+-----------------------------------------------------------
+local function DrawESP(player)
+    if ESPObjects[player] then return end
+    ESPObjects[player] = {
+        Box = Drawing.new("Square"),
+        Name = Drawing.new("Text"),
+        Tracer = Drawing.new("Line"),
+        HealthBar = Drawing.new("Line"),
+        Distance = Drawing.new("Text"),
+    }
+    ESPObjects[player].Box.Thickness = 2
+    ESPObjects[player].Box.Filled = false
+    ESPObjects[player].Box.Visible = false
+
+    ESPObjects[player].Name.Size = 18
+    ESPObjects[player].Name.Center = true
+    ESPObjects[player].Name.Outline = true
+    ESPObjects[player].Name.Visible = false
+
+    ESPObjects[player].Tracer.Thickness = 2
+    ESPObjects[player].Tracer.Visible = false
+
+    ESPObjects[player].HealthBar.Thickness = 3
+    ESPObjects[player].HealthBar.Visible = false
+
+    ESPObjects[player].Distance.Size = 16
+    ESPObjects[player].Distance.Center = true
+    ESPObjects[player].Distance.Outline = true
+    ESPObjects[player].Distance.Visible = false
+end
+
+local function RemoveESP(player)
+    if ESPObjects[player] then
+        for _, obj in pairs(ESPObjects[player]) do obj:Remove() end
+        ESPObjects[player] = nil
+    end
+end
+
+game:GetService("RunService").RenderStepped:Connect(function()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            DrawESP(player)
+            local hrp = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local pos, onscreen = Camera:WorldToViewportPoint(hrp.Position)
+            local color = RoleColors[GetRole(player)] or Color3.fromRGB(255,255,255)
+            local esp = ESPObjects[player]
+
+            -- Box
+            if BoxEnabled and onscreen then
+                local size = Vector2.new(40, 80)
+                esp.Box.Position = Vector2.new(pos.X - size.X/2, pos.Y - size.Y/2)
+                esp.Box.Size = size
+                esp.Box.Color = color
+                esp.Box.Visible = ESPEnabled
+            else esp.Box.Visible = false end
+
+            -- Name
+            if NameEnabled and head and onscreen then
+                esp.Name.Text = player.Name.." ["..GetRole(player).."]"
+                esp.Name.Position = Vector2.new(pos.X, pos.Y - 50)
+                esp.Name.Color = color
+                esp.Name.Visible = ESPEnabled
+            else esp.Name.Visible = false end
+
+            -- Tracer
+            if TracerEnabled and onscreen then
+                esp.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+                esp.Tracer.To = Vector2.new(pos.X, pos.Y)
+                esp.Tracer.Color = color
+                esp.Tracer.Visible = ESPEnabled
+            else esp.Tracer.Visible = false end
+
+            -- HealthBar
+            if HealthBarEnabled and player.Character:FindFirstChild("Humanoid") and onscreen then
+                local hp = player.Character.Humanoid.Health / player.Character.Humanoid.MaxHealth
+                esp.HealthBar.From = Vector2.new(pos.X - 25, pos.Y + 40)
+                esp.HealthBar.To = Vector2.new(pos.X - 25, pos.Y + 40 - 60 * hp)
+                esp.HealthBar.Color = Color3.fromRGB(0, 255, 0)
+                esp.HealthBar.Visible = ESPEnabled
+            else esp.HealthBar.Visible = false end
+
+            -- Distance
+            if DistanceEnabled and onscreen then
+                local dist = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                esp.Distance.Text = tostring(dist).."m"
+                esp.Distance.Position = Vector2.new(pos.X, pos.Y + 45)
+                esp.Distance.Color = color
+                esp.Distance.Visible = ESPEnabled
+            else esp.Distance.Visible = false end
+        else
+            RemoveESP(player)
+        end
+    end
+end)
+
+Players.PlayerRemoving:Connect(RemoveESP)
+Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function() DrawESP(p) end) end)
+
+-----------------------------------------------------------
+-- == GunESP / CoinESP ==
+-----------------------------------------------------------
+game:GetService("RunService").RenderStepped:Connect(function()
+    if GunESPEnabled then
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj.Name == "GunDrop" then
+                if not obj:FindFirstChild("EclipseGunESP") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "EclipseGunESP"
+                    hl.Parent = obj
+                    hl.FillColor = RoleColors.Gun
+                    hl.OutlineColor = Color3.new(0,0,0)
+                    hl.FillTransparency = 0.2
+                    hl.OutlineTransparency = 0.1
+                end
+            end
+        end
+    else
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:FindFirstChild("EclipseGunESP") then
+                obj.EclipseGunESP:Destroy()
+            end
+        end
+    end
+    if CoinESPEnabled then
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj.Name == "Coin" or obj.Name == "CoinDrop" then
+                if not obj:FindFirstChild("EclipseCoinESP") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "EclipseCoinESP"
+                    hl.Parent = obj
+                    hl.FillColor = RoleColors.Coin
+                    hl.OutlineColor = Color3.new(0,0,0)
+                    hl.FillTransparency = 0.2
+                    hl.OutlineTransparency = 0.1
+                end
+            end
+        end
+    else
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:FindFirstChild("EclipseCoinESP") then
+                obj.EclipseCoinESP:Destroy()
+            end
+        end
+    end
+end)
+
+-----------------------------------------------------------
+-- == Wallhack / Chams ==
+-----------------------------------------------------------
+local function ToggleWallhack(enabled)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LP and player.Character then
+            for _, part in pairs(player.Character:GetChildren()) do
+                if part:IsA("BasePart") then
+                    part.LocalTransparencyModifier = enabled and 0.3 or 0
+                    part.Material = enabled and Enum.Material.ForceField or Enum.Material.Plastic
+                end
+            end
+        end
+    end
+end
+
+-----------------------------------------------------------
+-- == Авто-фарм (Монеты/XP) ==
+-----------------------------------------------------------
+local function StartAutoFarm()
+    AutoFarmActive = true
+    spawn(function()
+        while AutoFarmActive do
+            local coins = {}
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj.Name == "Coin" or obj.Name == "CoinDrop" then
+                    table.insert(coins, obj)
+                end
+            end
+            if #coins > 0 then
+                local coin = coins[math.random(1, #coins)]
+                local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                if hrp and coin then
+                    hrp.CFrame = coin.CFrame + Vector3.new(0,2,0)
+                end
+            end
+            wait(0.4)
+        end
+    end)
+end
+
+local function StopAutoFarm() AutoFarmActive = false end
+
+-----------------------------------------------------------
+-- == Авто-уклонение от убийцы ==
+-----------------------------------------------------------
+local function ToggleAvoidMurderer(enabled)
+    AvoidMurdererActive = enabled
+    spawn(function()
+        while AvoidMurdererActive do
+            local murderer = nil
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LP and GetRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    murderer = player.Character.HumanoidRootPart
+                    break
+                end
+            end
+            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if murderer and hrp then
+                local dist = (hrp.Position - murderer.Position).Magnitude
+                if dist < 17 then
+                    hrp.CFrame = hrp.CFrame + (hrp.Position - murderer.Position).Unit * 20
+                end
+            end
+            wait(0.3)
+        end
+    end)
+end
+
+-----------------------------------------------------------
+-- == Мувмент: Noclip, Fly, Speed, SuperJump ==
+-----------------------------------------------------------
+local function ToggleNoclip(enabled)
+    NoclipActive = enabled
+    spawn(function()
+        while NoclipActive do
+            if LP.Character then
+                for _, v in pairs(LP.Character:GetDescendants()) do
+                    if v:IsA("BasePart") then v.CanCollide = not enabled end
+                end
+            end
+            wait()
+        end
+    end)
+end
+
+local function ToggleFly(enabled)
+    FlyActive = enabled
+    local speed = 90
+    if enabled then
+        local body = Instance.new("BodyVelocity")
+        body.Name = "EclipseFly"
+        body.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        body.Parent = LP.Character.HumanoidRootPart
+        body.Velocity = Vector3.new(0,0,0)
+        spawn(function()
+            while FlyActive and body do
+                body.Velocity = Camera.CFrame.LookVector * speed
+                wait()
+            end
+        end)
+    else
+        if LP.Character and LP.Character.HumanoidRootPart:FindFirstChild("EclipseFly") then
+            LP.Character.HumanoidRootPart.EclipseFly:Destroy()
+        end
+    end
+end
+
+local function ToggleSuperJump(enabled)
+    SuperJumpActive = enabled
+    LP.Character.Humanoid.JumpPower = enabled and 220 or 50
+end
+
+local function ToggleSpeed(enabled)
+    SpeedActive = enabled
+    LP.Character.Humanoid.WalkSpeed = enabled and 80 or 16
+end
+
+-----------------------------------------------------------
+-- == TP функции ==
+-----------------------------------------------------------
+local function TeleportToPlayer(playerName)
+    local player = Players:FindFirstChild(playerName)
+    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(0,2,0)
+    end
+end
+
+local function TeleportToGun()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name == "GunDrop" then
+            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = obj.CFrame + Vector3.new(0,2,0) end
+            break
+        end
+    end
+end
+
+local function TeleportToCoin()
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj.Name == "Coin" or obj.Name == "CoinDrop" then
+            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if hrp then hrp.CFrame = obj.CFrame + Vector3.new(0,2,0) end
+            break
+        end
+    end
+end
+
+local function TeleportToSpawn()
+    if workspace:FindFirstChild("Spawn") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        LP.Character.HumanoidRootPart.CFrame = workspace.Spawn.CFrame + Vector3.new(0,2,0)
+    end
+end
+
+local function TeleportRandom()
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        hrp.CFrame = hrp.CFrame + Vector3.new(math.random(-100,100),2,math.random(-100,100))
+    end
+end
+
+-----------------------------------------------------------
+-- == Троллинг и Прочее ==
+-----------------------------------------------------------
+local function SpamTradeRequests()
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LP then
+            game.ReplicatedStorage:WaitForChild("TradeRequest"):FireServer(player)
+            wait(0.1)
+        end
+    end
+end
+
+local function SendFakeMessage(text)
+    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
+end
+
+local function FakeMurderer()
+    SendFakeMessage("[SYSTEM] Murderer: "..LP.Name.."!")
+end
+
+-----------------------------------------------------------
+-- == Анти-кик/анти-лаг/стелс ==
+-----------------------------------------------------------
+local function ActivateAntiKick(enabled)
+    AntiKickActive = enabled
+    if enabled then
+        LP.Idled:connect(function()
+            game.VirtualUser:ClickButton2(Vector2.new())
+        end)
+        -- Анти-кик Detection: (можно добавить)
+    end
+end
+
+-----------------------------------------------------------
+-- == GUI интерфейс ==
+-----------------------------------------------------------
+local VisualTab = Window:CreateTab("👁️ Визуал", 1234567890)
+VisualTab:CreateToggle({Name="📦 ESP Box",CurrentValue=true,Flag="ESPBox",Callback=function(v) BoxEnabled=v end})
+VisualTab:CreateToggle({Name="👤 ESP Name",CurrentValue=true,Flag="ESPName",Callback=function(v) NameEnabled=v end})
+VisualTab:CreateToggle({Name="📈 ESP Distance",CurrentValue=false,Flag="ESPDistance",Callback=function(v) DistanceEnabled=v end})
+VisualTab:CreateToggle({Name="🟩 ESP HealthBar",CurrentValue=false,Flag="ESPHealthBar",Callback=function(v) HealthBarEnabled=v end})
+VisualTab:CreateToggle({Name="📍 ESP Tracers",CurrentValue=false,Flag="ESPTracer",Callback=function(v) TracerEnabled=v end})
+VisualTab:CreateToggle({Name="🔫 GunESP",CurrentValue=false,Flag="GunESP",Callback=function(v) GunESPEnabled=v end})
+VisualTab:CreateToggle({Name="🪙 CoinESP",CurrentValue=false,Flag="CoinESP",Callback=function(v) CoinESPEnabled=v end})
+VisualTab:CreateToggle({Name="🎨 Chams/Wallhack",CurrentValue=false,Flag="Wallhack",Callback=function(v) ToggleWallhack(v) end})
+VisualTab:CreateToggle({Name="🌈 Включить весь ESP",CurrentValue=true,Flag="ESPEnabled",Callback=function(v) ESPEnabled=v end})
+
+local AutoTab = Window:CreateTab("⚡ Авто", 1234567891)
+AutoTab:CreateToggle({Name="💰 Авто-Фарм Монет",CurrentValue=false,Flag="AutoFarm",Callback=function(v) if v then StartAutoFarm() else StopAutoFarm() end end})
+AutoTab:CreateToggle({Name="🔫 Авто-Взять Пушку",CurrentValue=false,Flag="AutoGun",Callback=function(v) if v then TeleportToGun() end end})
+AutoTab:CreateToggle({Name="🏃 Авто-Уклонение от убийцы",CurrentValue=false,Flag="AvoidMurderer",Callback=function(v) ToggleAvoidMurderer(v) end})
+
+local PlayerTab = Window:CreateTab("🎮 Игрок", 1234567892)
+PlayerTab:CreateToggle({Name="👻 Noclip",CurrentValue=false,Flag="Noclip",Callback=function(v) ToggleNoclip(v) end})
+PlayerTab:CreateToggle({Name="🔥 Fly",CurrentValue=false,Flag="Fly",Callback=function(v) ToggleFly(v) end})
+PlayerTab:CreateToggle({Name="🦘 SuperJump",CurrentValue=false,Flag="SuperJump",Callback=function(v) ToggleSuperJump(v) end})
+PlayerTab:CreateToggle({Name="🚀 SpeedHack",CurrentValue=false,Flag="Speed",Callback=function(v) ToggleSpeed(v) end})
+
+local TeleTab = Window:CreateTab("📍 Телепорт", 1234567893)
+UpdatePlayerList()
+TeleTab:CreateDropdown({Name="🎯 TP к игроку",Options=PlayerList,CurrentOption = "",Flag="TPTarget",Callback = TeleportToPlayer})
+TeleTab:CreateButton({Name="🔫 TP к Gun",Callback=TeleportToGun})
+TeleTab:CreateButton({Name="🪙 TP к Coin",Callback=TeleportToCoin})
+TeleTab:CreateButton({Name="🏠 TP на Spawn",Callback=TeleportToSpawn})
+TeleTab:CreateButton({Name="🎲 TP Random",Callback=TeleportRandom})
+
+local TrollTab = Window:CreateTab("😈 Троллинг", 1234567894)
+TrollTab:CreateButton({Name="🔄 Спам трейдами",Callback=SpamTradeRequests})
+TrollTab:CreateInput({Name="💬 Фейк сообщение",PlaceholderText="Введите текст...",Callback=SendFakeMessage})
+TrollTab:CreateButton({Name="🔪 Фейк убийца",Callback=FakeMurderer})
+
+local SettingsTab = Window:CreateTab("⚙️ Настройки", 1234567895)
+SettingsTab:CreateToggle({Name="🛡️ Anti-Kick/Stealth",CurrentValue=false,Flag="AntiKick",Callback=ActivateAntiKick})
+SettingsTab:CreateButton({Name="🗑️ Удалить интерфейс",Callback=function() Rayfield:Destroy() end})
+SettingsTab:CreateButton({Name="🔄 Перезайти на сервер",Callback=function() game:GetService("TeleportService"):Teleport(game.PlaceId) end})
+SettingsTab:CreateButton({Name="💸 Донат на Dev",Callback=function() setclipboard("https://boosty.to/copilotdev") Rayfield:Notify({Title="Спасибо!",Content="Ссылка доната скопирована!"}) end})
+
+Rayfield:Notify({
+    Title = "Eclipse X Hub ULTIMATE",
+    Content = "Ультимативный чит MM2 2025 запущен!\nEnjoy!",
+    Duration = 9,
+    Image = 4483362458,
+})
+
+-----------------------------------------------------------
+-- == Конец ==
+-----------------------------------------------------------
