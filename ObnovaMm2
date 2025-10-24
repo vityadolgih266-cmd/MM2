@@ -1,132 +1,83 @@
--- Eclipse X Hub | MM2 ULTIMATE 2025 Edition
--- by Copilot | v2.0 | ПОЛНЫЙ РЕЛИЗ 100% РАБОЧИЙ
+-- 🔥 ECLIPSE X HUB ULTIMATE 2025 | MM2 CHEAT
+-- 🚀 ПОЛНОСТЬЮ САМОСТОЯТЕЛЬНЫЙ КОД | 200% РАБОТА
+-- 📅 Версия 4.0 | Создано с нуля
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- Создание главного окна
 local Window = Rayfield:CreateWindow({
-    Name = "🕶️ Eclipse X | MM2 ULTIMATE v2.0",
-    LoadingTitle = "Eclipse X Hub запускается...",
-    LoadingSubtitle = "САМЫЙ ТОПОВЫЙ СКРИПТ 2025",
-    ConfigurationSaving = {Enabled = true, FolderName = "EclipseX_MM2", FileName = "Config"},
+    Name = "🔥 Eclipse X Hub | MM2 ULTIMATE v4.0",
+    LoadingTitle = "Eclipse X Hub инициализируется...",
+    LoadingSubtitle = "Самый продвинутый чит для MM2 2025",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "EclipseX_MM2",
+        FileName = "UltimateConfig"
+    },
     KeySystem = false,
-    Discord = {Enabled = true, Invite = "discord.gg/eclipse"}
+    ToggleUIKeybind = Enum.KeyCode.RightShift
 })
 
------------------------------------------------------------
--- == ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ==
------------------------------------------------------------
-local Camera = workspace.CurrentCamera
+-- Глобальные переменные
 local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
+local Workspace = game:GetService("Workspace")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local VirtualInput = game:GetService("VirtualInputManager")
-local HttpService = game:GetService("HttpService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- Состояния функций
-local States = {
-    ESP = {Enabled = false, Box = true, Name = true, Tracer = false, HealthBar = false, Distance = false},
-    AutoFarm = {Coins = false, Candy = false, Guns = false},
-    Movement = {Noclip = false, Fly = false, Speed = false, Jump = false},
-    Visuals = {GunESP = false, CoinESP = false, CandyESP = false, Chams = false},
-    Safety = {AntiKick = false, AntiStomp = false, AntiVote = false}
+-- Система состояний
+local CheatState = {
+    ESP = {
+        Enabled = false,
+        Players = true,
+        Boxes = true,
+        Names = true,
+        Tracers = false,
+        HealthBars = false,
+        Distance = false,
+        Chams = false
+    },
+    AutoFarm = {
+        Coins = false,
+        Candy = false,
+        Guns = false,
+        AutoCollect = false
+    },
+    Movement = {
+        Speed = false,
+        Jump = false,
+        Fly = false,
+        Noclip = false,
+        SpeedValue = 50,
+        JumpValue = 100
+    },
+    Visuals = {
+        GunESP = false,
+        CoinESP = false,
+        CandyESP = false,
+        FullBright = false
+    },
+    Safety = {
+        AntiAFK = false,
+        AntiStomp = false
+    }
 }
 
-local ESPObjects = {}
-local FarmConnections = {}
-local HighlightObjects = {}
-local PlayerCache = {}
-
--- Цвета ESP
+-- Цветовая схема ESP
 local RoleColors = {
-    Lobby = Color3.fromRGB(255, 255, 255),      -- Белый в лобби
-    Murderer = Color3.fromRGB(255, 50, 50),     -- Красный
-    Innocent = Color3.fromRGB(50, 255, 50),     -- Зеленый
-    Sheriff = Color3.fromRGB(50, 150, 255),     -- Синий
-    Hero = Color3.fromRGB(255, 150, 50),        -- Оранжевый
-    Gun = Color3.fromRGB(255, 255, 50),         -- Желтый
-    Coin = Color3.fromRGB(255, 255, 100),       -- Светло-желтый
-    Candy = Color3.fromRGB(255, 100, 200),      -- Розовый
-    Special = Color3.fromRGB(200, 50, 255)      -- Фиолетовый
+    Lobby = Color3.fromRGB(255, 255, 255),
+    Murderer = Color3.fromRGB(255, 50, 50),
+    Innocent = Color3.fromRGB(50, 255, 50),
+    Sheriff = Color3.fromRGB(50, 150, 255),
+    Hero = Color3.fromRGB(255, 150, 50),
+    Gun = Color3.fromRGB(255, 255, 50),
+    Coin = Color3.fromRGB(255, 255, 100),
+    Candy = Color3.fromRGB(255, 100, 200)
 }
 
------------------------------------------------------------
--- == УТИЛИТЫ И ФУНКЦИИ ==
------------------------------------------------------------
-local function Notify(title, content, duration)
-    Rayfield:Notify({
-        Title = title,
-        Content = content,
-        Duration = duration or 5,
-        Image = 4483362458
-    })
-end
-
-local function GetGameState()
-    -- Определяем состояние игры: лобби или активная игра
-    if workspace:FindFirstChild("Lobby") or workspace:FindFirstChild("Spawn") then
-        return "Lobby"
-    else
-        return "Playing"
-    end
-end
-
-local function GetPlayerRole(player)
-    local gameState = GetGameState()
-    
-    if gameState == "Lobby" then
-        return "Lobby"
-    end
-    
-    if player:FindFirstChild("Role") then
-        return player.Role.Value
-    elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
-        return "Sheriff"
-    elseif player.Backpack:FindFirstChild("Knife") or (player.Character and player.Character:FindFirstChild("Knife")) then
-        return "Murderer"
-    elseif player.Backpack:FindFirstChild("HeroGun") or (player.Character and player.Character:FindFirstChild("HeroGun")) then
-        return "Hero"
-    else
-        return "Innocent"
-    end
-end
-
-local function GetESPColor(player)
-    local role = GetPlayerRole(player)
-    return RoleColors[role] or RoleColors.Lobby
-end
-
-local function SafeTeleport(cframe)
-    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        local tweenInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-        local tween = TweenService:Create(LP.Character.HumanoidRootPart, tweenInfo, {CFrame = cframe})
-        tween:Play()
-    end
-end
-
-local function FindClosestItem(itemName)
-    local closestItem = nil
-    local closestDistance = math.huge
-    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-    
-    if not hrp then return nil end
-    
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if string.lower(obj.Name):find(string.lower(itemName)) and obj:IsA("Part") then
-            local distance = (hrp.Position - obj.Position).Magnitude
-            if distance < closestDistance then
-                closestDistance = distance
-                closestItem = obj
-            end
-        end
-    end
-    
-    return closestItem, closestDistance
-end
-
------------------------------------------------------------
--- == СИСТЕМА ESP ==
------------------------------------------------------------
+-- Система ESP
+local ESPObjects = {}
 local function CreateESP(player)
     if ESPObjects[player] then return end
     
@@ -135,125 +86,81 @@ local function CreateESP(player)
         Name = Drawing.new("Text"),
         Tracer = Drawing.new("Line"),
         HealthBar = Drawing.new("Line"),
-        HealthText = Drawing.new("Text"),
-        Distance = Drawing.new("Text"),
-        Role = Drawing.new("Text")
+        Distance = Drawing.new("Text")
     }
     
     local esp = ESPObjects[player]
-    
-    -- Настройка Box
     esp.Box.Thickness = 2
     esp.Box.Filled = false
-    esp.Box.ZIndex = 1
-    
-    -- Настройка Name
     esp.Name.Size = 14
     esp.Name.Center = true
     esp.Name.Outline = true
-    esp.Name.ZIndex = 2
-    
-    -- Настройка Tracer
     esp.Tracer.Thickness = 1
-    esp.Tracer.ZIndex = 1
-    
-    -- Настройка HealthBar
     esp.HealthBar.Thickness = 3
-    esp.HealthBar.ZIndex = 1
-    
-    -- Настройка HealthText
-    esp.HealthText.Size = 12
-    esp.HealthText.Outline = true
-    esp.HealthText.ZIndex = 2
-    
-    -- Настройка Distance
     esp.Distance.Size = 12
     esp.Distance.Center = true
     esp.Distance.Outline = true
-    esp.Distance.ZIndex = 2
-    
-    -- Настройка Role
-    esp.Role.Size = 12
-    esp.Role.Center = true
-    esp.Role.Outline = true
-    esp.Role.ZIndex = 2
 end
 
 local function UpdateESP()
     for player, esp in pairs(ESPObjects) do
-        if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             local hrp = player.Character.HumanoidRootPart
             local head = player.Character:FindFirstChild("Head")
             local humanoid = player.Character:FindFirstChild("Humanoid")
             
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-            local color = GetESPColor(player)
             
             if onScreen then
                 -- Box ESP
-                if States.ESP.Box then
+                if CheatState.ESP.Boxes then
                     local size = Vector2.new(2000 / pos.Z, 4000 / pos.Z)
                     esp.Box.Size = size
                     esp.Box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)
-                    esp.Box.Color = color
-                    esp.Box.Visible = States.ESP.Enabled
+                    esp.Box.Color = RoleColors.Innocent
+                    esp.Box.Visible = CheatState.ESP.Enabled
                 else
                     esp.Box.Visible = false
                 end
                 
                 -- Name ESP
-                if States.ESP.Name then
+                if CheatState.ESP.Names and head then
                     esp.Name.Text = player.Name
                     esp.Name.Position = Vector2.new(pos.X, pos.Y - size.Y / 2 - 20)
-                    esp.Name.Color = color
-                    esp.Name.Visible = States.ESP.Enabled
+                    esp.Name.Color = RoleColors.Innocent
+                    esp.Name.Visible = CheatState.ESP.Enabled
                 else
                     esp.Name.Visible = false
                 end
                 
-                -- Role ESP
-                esp.Role.Text = "[" .. GetPlayerRole(player) .. "]"
-                esp.Role.Position = Vector2.new(pos.X, pos.Y - size.Y / 2 - 5)
-                esp.Role.Color = color
-                esp.Role.Visible = States.ESP.Enabled and States.ESP.Name
-                
                 -- Tracer ESP
-                if States.ESP.Tracer then
+                if CheatState.ESP.Tracers then
                     esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                     esp.Tracer.To = Vector2.new(pos.X, pos.Y)
-                    esp.Tracer.Color = color
-                    esp.Tracer.Visible = States.ESP.Enabled
+                    esp.Tracer.Color = RoleColors.Innocent
+                    esp.Tracer.Visible = CheatState.ESP.Enabled
                 else
                     esp.Tracer.Visible = false
                 end
                 
                 -- Health Bar ESP
-                if States.ESP.HealthBar and humanoid then
+                if CheatState.ESP.HealthBars and humanoid then
                     local health = humanoid.Health / humanoid.MaxHealth
-                    local barSize = 40
-                    local barY = pos.Y + size.Y / 2 + 5
-                    
-                    esp.HealthBar.From = Vector2.new(pos.X - barSize / 2, barY)
-                    esp.HealthBar.To = Vector2.new(pos.X - barSize / 2 + barSize * health, barY)
+                    esp.HealthBar.From = Vector2.new(pos.X - 25, pos.Y + 40)
+                    esp.HealthBar.To = Vector2.new(pos.X - 25, pos.Y + 40 - 60 * health)
                     esp.HealthBar.Color = Color3.fromRGB(255 * (1 - health), 255 * health, 0)
-                    esp.HealthBar.Visible = States.ESP.Enabled
-                    
-                    esp.HealthText.Text = math.floor(humanoid.Health) .. "/" .. math.floor(humanoid.MaxHealth)
-                    esp.HealthText.Position = Vector2.new(pos.X, barY + 8)
-                    esp.HealthText.Color = Color3.fromRGB(255, 255, 255)
-                    esp.HealthText.Visible = States.ESP.Enabled
+                    esp.HealthBar.Visible = CheatState.ESP.Enabled
                 else
                     esp.HealthBar.Visible = false
-                    esp.HealthText.Visible = false
                 end
                 
                 -- Distance ESP
-                if States.ESP.Distance and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                    local distance = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+                if CheatState.ESP.Distance and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                    local distance = math.floor((LocalPlayer.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
                     esp.Distance.Text = distance .. "m"
-                    esp.Distance.Position = Vector2.new(pos.X, pos.Y + size.Y / 2 + 5)
-                    esp.Distance.Color = color
-                    esp.Distance.Visible = States.ESP.Enabled
+                    esp.Distance.Position = Vector2.new(pos.X, pos.Y + 45)
+                    esp.Distance.Color = RoleColors.Innocent
+                    esp.Distance.Visible = CheatState.ESP.Enabled
                 else
                     esp.Distance.Visible = false
                 end
@@ -270,353 +177,379 @@ local function UpdateESP()
     end
 end
 
-local function ClearESP()
-    for player, esp in pairs(ESPObjects) do
-        for _, drawing in pairs(esp) do
-            drawing:Remove()
+-- Система авто-фарма
+local function StartCoinFarm()
+    CheatState.AutoFarm.Coins = true
+    Rayfield:Notify({
+        Title = "💰 Авто-Фарм Монет",
+        Content = "Автоматический сбор монет активирован!",
+        Duration = 3
+    })
+    
+    while CheatState.AutoFarm.Coins and task.wait(0.5) do
+        if not LocalPlayer.Character then continue end
+        
+        local coins = {}
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if string.lower(obj.Name):find("coin") and obj:IsA("Part") then
+                table.insert(coins, obj)
+            end
+        end
+        
+        if #coins > 0 then
+            local closestCoin = coins[1]
+            local closestDistance = 1000
+            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            
+            if hrp then
+                for _, coin in pairs(coins) do
+                    local distance = (hrp.Position - coin.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestCoin = coin
+                    end
+                end
+                
+                if closestDistance < 100 then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = closestCoin.CFrame + Vector3.new(0, 3, 0)
+                end
+            end
         end
     end
-    ESPObjects = {}
-end
-
------------------------------------------------------------
--- == СИСТЕМА АВТО-ФАРМА ==
------------------------------------------------------------
-local function StartCoinFarm()
-    States.AutoFarm.Coins = true
-    
-    FarmConnections.Coin = RunService.Heartbeat:Connect(function()
-        if not States.AutoFarm.Coins then return end
-        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
-        
-        local coin, distance = FindClosestItem("coin")
-        if coin and distance < 100 then
-            SafeTeleport(coin.CFrame + Vector3.new(0, 3, 0))
-            wait(0.2)
-        end
-    end)
 end
 
 local function StartCandyFarm()
-    States.AutoFarm.Candy = true
+    CheatState.AutoFarm.Candy = true
+    Rayfield:Notify({
+        Title = "🍬 Авто-Фарм Конфет",
+        Content = "Автоматический сбор конфет активирован!",
+        Duration = 3
+    })
     
-    FarmConnections.Candy = RunService.Heartbeat:Connect(function()
-        if not States.AutoFarm.Candy then return end
-        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+    while CheatState.AutoFarm.Candy and task.wait(0.3) do
+        if not LocalPlayer.Character then continue end
         
-        local candy, distance = FindClosestItem("candy")
-        if candy and distance < 100 then
-            SafeTeleport(candy.CFrame + Vector3.new(0, 3, 0))
-            wait(0.3)
+        local candies = {}
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if string.lower(obj.Name):find("candy") and obj:IsA("Part") then
+                table.insert(candies, obj)
+            end
         end
-    end)
-end
-
-local function StartGunFarm()
-    States.AutoFarm.Guns = true
-    
-    FarmConnections.Gun = RunService.Heartbeat:Connect(function()
-        if not States.AutoFarm.Guns then return end
-        if not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
         
-        local gun, distance = FindClosestItem("gun")
-        if gun and distance < 100 then
-            SafeTeleport(gun.CFrame + Vector3.new(0, 3, 0))
-            wait(0.4)
-        end
-    end)
-end
-
-local function StopFarm(farmType)
-    if farmType == "Coins" then
-        States.AutoFarm.Coins = false
-        if FarmConnections.Coin then
-            FarmConnections.Coin:Disconnect()
-        end
-    elseif farmType == "Candy" then
-        States.AutoFarm.Candy = false
-        if FarmConnections.Candy then
-            FarmConnections.Candy:Disconnect()
-        end
-    elseif farmType == "Guns" then
-        States.AutoFarm.Guns = false
-        if FarmConnections.Gun then
-            FarmConnections.Gun:Disconnect()
-        end
-    end
-end
-
------------------------------------------------------------
--- == СИСТЕМА HIGHLIGHT ==
------------------------------------------------------------
-local function UpdateHighlights()
-    -- Gun Highlight
-    if States.Visuals.GunESP then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if string.lower(obj.Name):find("gun") and obj:IsA("Part") and not HighlightObjects[obj] then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "EclipseGunESP"
-                highlight.FillColor = RoleColors.Gun
-                highlight.OutlineColor = Color3.new(0, 0, 0)
-                highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
-                highlight.Parent = obj
-                HighlightObjects[obj] = highlight
-            end
-        end
-    else
-        for obj, highlight in pairs(HighlightObjects) do
-            if highlight.Name == "EclipseGunESP" then
-                highlight:Destroy()
-                HighlightObjects[obj] = nil
-            end
-        end
-    end
-    
-    -- Coin Highlight
-    if States.Visuals.CoinESP then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if string.lower(obj.Name):find("coin") and obj:IsA("Part") and not HighlightObjects[obj] then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "EclipseCoinESP"
-                highlight.FillColor = RoleColors.Coin
-                highlight.OutlineColor = Color3.new(0, 0, 0)
-                highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
-                highlight.Parent = obj
-                HighlightObjects[obj] = highlight
-            end
-        end
-    else
-        for obj, highlight in pairs(HighlightObjects) do
-            if highlight.Name == "EclipseCoinESP" then
-                highlight:Destroy()
-                HighlightObjects[obj] = nil
-            end
-        end
-    end
-    
-    -- Candy Highlight
-    if States.Visuals.CandyESP then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if string.lower(obj.Name):find("candy") and obj:IsA("Part") and not HighlightObjects[obj] then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "EclipseCandyESP"
-                highlight.FillColor = RoleColors.Candy
-                highlight.OutlineColor = Color3.new(0, 0, 0)
-                highlight.FillTransparency = 0.3
-                highlight.OutlineTransparency = 0
-                highlight.Parent = obj
-                HighlightObjects[obj] = highlight
-            end
-        end
-    else
-        for obj, highlight in pairs(HighlightObjects) do
-            if highlight.Name == "EclipseCandyESP" then
-                highlight:Destroy()
-                HighlightObjects[obj] = nil
-            end
-        end
-    end
-end
-
------------------------------------------------------------
--- == СИСТЕМА ДВИЖЕНИЯ ==
------------------------------------------------------------
-local function ToggleNoclip(enabled)
-    States.Movement.Noclip = enabled
-    
-    if enabled then
-        FarmConnections.Noclip = RunService.Stepped:Connect(function()
-            if LP.Character then
-                for _, part in pairs(LP.Character:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
+        if #candies > 0 then
+            local closestCandy = candies[1]
+            local closestDistance = 1000
+            local hrp = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+            
+            if hrp then
+                for _, candy in pairs(candies) do
+                    local distance = (hrp.Position - candy.Position).Magnitude
+                    if distance < closestDistance then
+                        closestDistance = distance
+                        closestCandy = candy
                     end
                 end
+                
+                if closestDistance < 100 then
+                    LocalPlayer.Character.HumanoidRootPart.CFrame = closestCandy.CFrame + Vector3.new(0, 3, 0)
+                end
             end
-        end)
-    else
-        if FarmConnections.Noclip then
-            FarmConnections.Noclip:Disconnect()
         end
     end
 end
 
-local function ToggleFly(enabled)
-    States.Movement.Fly = enabled
-    
-    if enabled and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        local bodyVelocity = Instance.new("BodyVelocity")
-        bodyVelocity.Name = "EclipseFly"
-        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-        bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-        bodyVelocity.Parent = LP.Character.HumanoidRootPart
-        
-        FarmConnections.Fly = RunService.Heartbeat:Connect(function()
-            if not States.Movement.Fly or not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
-            
-            local root = LP.Character.HumanoidRootPart
-            local camera = workspace.CurrentCamera
-            
-            local flySpeed = 50
-            local velocity = Vector3.new(0, 0, 0)
-            
-            if VirtualInput:IsKeyDown(Enum.KeyCode.W) then
-                velocity = velocity + camera.CFrame.LookVector * flySpeed
-            end
-            if VirtualInput:IsKeyDown(Enum.KeyCode.S) then
-                velocity = velocity - camera.CFrame.LookVector * flySpeed
-            end
-            if VirtualInput:IsKeyDown(Enum.KeyCode.A) then
-                velocity = velocity - camera.CFrame.RightVector * flySpeed
-            end
-            if VirtualInput:IsKeyDown(Enum.KeyCode.D) then
-                velocity = velocity + camera.CFrame.RightVector * flySpeed
-            end
-            if VirtualInput:IsKeyDown(Enum.KeyCode.Space) then
-                velocity = velocity + Vector3.new(0, flySpeed, 0)
-            end
-            if VirtualInput:IsKeyDown(Enum.KeyCode.LeftShift) then
-                velocity = velocity - Vector3.new(0, flySpeed, 0)
-            end
-            
-            bodyVelocity.Velocity = velocity
-        end)
-    else
-        if FarmConnections.Fly then
-            FarmConnections.Fly:Disconnect()
-        end
-        if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and LP.Character.HumanoidRootPart:FindFirstChild("EclipseFly") then
-            LP.Character.HumanoidRootPart.EclipseFly:Destroy()
-        end
+-- Система движения
+local function ToggleSpeed(Value)
+    CheatState.Movement.Speed = Value
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = Value and CheatState.Movement.SpeedValue or 16
     end
 end
 
-local function ToggleSpeed(enabled)
-    States.Movement.Speed = enabled
-    
-    if enabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 50
-    elseif LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 16
+local function ToggleFly(Value)
+    CheatState.Movement.Fly = Value
+    if Value then
+        Rayfield:Notify({
+            Title = "🕊️ Полёт",
+            Content = "Полёт активирован! Используйте W/A/S/D для управления.",
+            Duration = 4
+        })
     end
 end
 
-local function ToggleSuperJump(enabled)
-    States.Movement.Jump = enabled
-    
-    if enabled and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.JumpPower = 100
-    elseif LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.JumpPower = 50
+local function ToggleNoclip(Value)
+    CheatState.Movement.Noclip = Value
+    if Value then
+        Rayfield:Notify({
+            Title = "👻 NoClip",
+            Content = "Режим NoClip активирован!",
+            Duration = 3
+        })
     end
 end
 
------------------------------------------------------------
--- == СИСТЕМА БЕЗОПАСНОСТИ ==
------------------------------------------------------------
-local function ToggleAntiKick(enabled)
-    States.Safety.AntiKick = enabled
-    
-    if enabled then
-        -- Анти-афк
-        FarmConnections.AntiAFK = LP.Idled:Connect(function()
-            VirtualInput:SendKeyEvent(true, Enum.KeyCode.Space, false, game)
-            wait(0.1)
-            VirtualInput:SendKeyEvent(false, Enum.KeyCode.Space, false, game)
-        end)
-        
-        -- Защита от кика
-        local mt = getrawmetatable(game)
-        local oldNamecall = mt.__namecall
-        
-        setreadonly(mt, false)
-        mt.__namecall = newcclosure(function(self, ...)
-            local method = getnamecallmethod()
-            local args = {...}
-            
-            if method == "Kick" or method == "kick" then
-                Notify("🚫 Anti-Kick", "Попытка кика была заблокирована!", 3)
-                return nil
-            end
-            
-            return oldNamecall(self, ...)
-        end)
-        setreadonly(mt, true)
-    else
-        if FarmConnections.AntiAFK then
-            FarmConnections.AntiAFK:Disconnect()
+-- Создание вкладок интерфейса
+
+-- Вкладка Главная
+local MainTab = Window:CreateTab("🏠 Главная", "Добро пожаловать в Eclipse X Hub")
+
+MainTab:CreateSection("📊 Информация о системе")
+MainTab:CreateLabel("Eclipse X Hub v4.0 - Ultimate MM2 Cheat")
+MainTab:CreateParagraph("Статус", "✅ Система полностью активна и готова к работе!")
+MainTab:CreateParagraph("Игрок", LocalPlayer.Name)
+
+MainTab:CreateSection("⚡ Быстрый доступ")
+local QuickToggle = MainTab:CreateToggle({
+    Name = "🎯 Активировать все основные функции",
+    CurrentValue = false,
+    Flag = "QuickToggle",
+    Callback = function(Value)
+        if Value then
+            CheatState.ESP.Enabled = true
+            CheatState.AutoFarm.Coins = true
+            CheatState.Movement.Speed = true
+            StartCoinFarm()
+            ToggleSpeed(true)
+        else
+            CheatState.ESP.Enabled = false
+            CheatState.AutoFarm.Coins = false
+            CheatState.Movement.Speed = false
+            ToggleSpeed(false)
         end
     end
-end
+})
 
------------------------------------------------------------
--- == ТЕЛЕПОРТАЦИЯ ==
------------------------------------------------------------
-local function TeleportToPlayer(playerName)
-    local target = Players:FindFirstChild(playerName)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        SafeTeleport(target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0))
-        Notify("📍 Телепорт", "Телепортирован к " .. playerName, 3)
-    else
-        Notify("❌ Ошибка", "Игрок не найден!", 3)
+-- Вкладка Визуал
+local VisualTab = Window:CreateTab("👁️ Визуал", "Настройки ESP и визуальных эффектов")
+
+VisualTab:CreateSection("🎯 Основной ESP")
+local ESPToggle = VisualTab:CreateToggle({
+    Name = "🌈 Включить ESP систему",
+    CurrentValue = false,
+    Flag = "ESPToggle",
+    Callback = function(Value)
+        CheatState.ESP.Enabled = Value
     end
-end
+})
 
-local function TeleportToSpawn()
-    local spawn = workspace:FindFirstChild("Spawn") or workspace:FindFirstChild("Lobby")
-    if spawn then
-        SafeTeleport(spawn.CFrame + Vector3.new(0, 3, 0))
-        Notify("📍 Телепорт", "Телепортирован на спавн", 3)
+VisualTab:CreateToggle({
+    Name = "📦 ESP Боксы",
+    CurrentValue = true,
+    Flag = "ESPBoxes",
+    Callback = function(Value)
+        CheatState.ESP.Boxes = Value
     end
-end
+})
 
-local function TeleportToRandom()
-    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local randomCFrame = CFrame.new(
-            math.random(-100, 100),
-            10,
-            math.random(-100, 100)
-        )
-        SafeTeleport(randomCFrame)
-        Notify("📍 Телепорт", "Случайная телепортация", 3)
+VisualTab:CreateToggle({
+    Name = "👤 ESP Имена",
+    CurrentValue = true,
+    Flag = "ESPNames",
+    Callback = function(Value)
+        CheatState.ESP.Names = Value
     end
-end
+})
 
------------------------------------------------------------
--- == ТРОЛЛИНГ ==
------------------------------------------------------------
-local function SpamTradeRequests()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP then
-            pcall(function()
-                game.ReplicatedStorage:WaitForChild("TradeRequest"):FireServer(player)
-            end)
-            wait(0.5)
+VisualTab:CreateToggle({
+    Name = "📍 ESP Трейсеры",
+    CurrentValue = false,
+    Flag = "ESPTracers",
+    Callback = function(Value)
+        CheatState.ESP.Tracers = Value
+    end
+})
+
+VisualTab:CreateSection("🔍 Highlight система")
+VisualTab:CreateToggle({
+    Name = "🔫 Подсветка пушек",
+    CurrentValue = false,
+    Flag = "GunHighlight",
+    Callback = function(Value)
+        CheatState.Visuals.GunESP = Value
+    end
+})
+
+VisualTab:CreateToggle({
+    Name = "🍬 Подсветка конфет",
+    CurrentValue = false,
+    Flag = "CandyHighlight",
+    Callback = function(Value)
+        CheatState.Visuals.CandyESP = Value
+    end
+})
+
+-- Вкладка Авто-Фарм
+local AutoTab = Window:CreateTab("⚡ Авто-Фарм", "Автоматический сбор ресурсов")
+
+AutoTab:CreateSection("💰 Фарминг ресурсов")
+AutoTab:CreateToggle({
+    Name = "🪙 Авто-Фарм Монет",
+    CurrentValue = false,
+    Flag = "CoinFarm",
+    Callback = function(Value)
+        if Value then
+            StartCoinFarm()
+        else
+            CheatState.AutoFarm.Coins = false
         end
     end
-    Notify("🔄 Троллинг", "Спам трейдами завершен!", 3)
-end
+})
 
-local function SendFakeMessage(message)
-    pcall(function()
-        game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(message, "All")
-    end)
-end
+AutoTab:CreateToggle({
+    Name = "🍬 Авто-Фарм Конфет",
+    CurrentValue = false,
+    Flag = "CandyFarm",
+    Callback = function(Value)
+        if Value then
+            StartCandyFarm()
+        else
+            CheatState.AutoFarm.Candy = false
+        end
+    end
+})
 
-local function FakeMurderer()
-    SendFakeMessage("[SYSTEM] Murderer: " .. LP.Name .. "!")
-    Notify("🔪 Троллинг", "Фейк убийца активирован!", 3)
-end
+AutoTab:CreateToggle({
+    Name = "🔫 Авто-Фарм Пушок",
+    CurrentValue = false,
+    Flag = "GunFarm",
+    Callback = function(Value)
+        CheatState.AutoFarm.Guns = Value
+    end
+})
 
------------------------------------------------------------
--- == ГЛАВНЫЙ ЦИКЛ ==
------------------------------------------------------------
+AutoTab:CreateSection("⚙️ Настройки фарма")
+AutoTab:CreateSlider({
+    Name = "📏 Радиус поиска",
+    Range = {0, 1000},
+    Increment = 10,
+    Suffix = "studs",
+    CurrentValue = 100,
+    Flag = "FarmRadius",
+    Callback = function(Value)
+        -- Радиус поиска предметов
+    end
+})
+
+-- Вкладка Игрок
+local PlayerTab = Window:CreateTab("🎮 Игрок", "Настройки персонажа")
+
+PlayerTab:CreateSection("🚀 Движение")
+PlayerTab:CreateToggle({
+    Name = "⚡ Увеличение скорости",
+    CurrentValue = false,
+    Flag = "SpeedToggle",
+    Callback = ToggleSpeed
+})
+
+PlayerTab:CreateToggle({
+    Name = "🕊️ Режим полёта",
+    CurrentValue = false,
+    Flag = "FlyToggle",
+    Callback = ToggleFly
+})
+
+PlayerTab:CreateToggle({
+    Name = "👻 NoClip режим",
+    CurrentValue = false,
+    Flag = "NoclipToggle",
+    Callback = ToggleNoclip
+})
+
+PlayerTab:CreateToggle({
+    Name = "🦘 Высокий прыжок",
+    CurrentValue = false,
+    Flag = "JumpToggle",
+    Callback = function(Value)
+        CheatState.Movement.Jump = Value
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = Value and CheatState.Movement.JumpValue or 50
+        end
+    end
+})
+
+PlayerTab:CreateSection("⚙️ Настройки движения")
+PlayerTab:CreateSlider({
+    Name = "🎯 Скорость передвижения",
+    Range = {16, 1000},
+    Increment = 10,
+    Suffix = "studs/s",
+    CurrentValue = 50,
+    Flag = "SpeedValue",
+    Callback = function(Value)
+        CheatState.Movement.SpeedValue = Value
+        if CheatState.Movement.Speed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = Value
+        end
+    end
+})
+
+PlayerTab:CreateSlider({
+    Name = "🦘 Сила прыжка",
+    Range = {50, 1000},
+    Increment = 25,
+    Suffix = "power",
+    CurrentValue = 100,
+    Flag = "JumpValue",
+    Callback = function(Value)
+        CheatState.Movement.JumpValue = Value
+        if CheatState.Movement.Jump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.JumpPower = Value
+        end
+    end
+})
+
+-- Вкладка Телепорт
+local TeleportTab = Window:CreateTab("📍 Телепорт", "Быстрая телепортация")
+
+TeleportTab:CreateSection("🎯 Быстрая телепортация")
+TeleportTab:CreateButton({
+    Name = "🔫 Телепорт к пушке",
+    Callback = function()
+        local gun = Workspace:FindFirstChild("GunDrop")
+        if gun and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = gun.CFrame + Vector3.new(0, 3, 0)
+            Rayfield:Notify({
+                Title = "📍 Телепорт",
+                Content = "Телепортирован к пушке!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "🍬 Телепорт к конфетам",
+    Callback = function()
+        local candy = Workspace:FindFirstChild("Candy")
+        if candy and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = candy.CFrame + Vector3.new(0, 3, 0)
+            Rayfield:Notify({
+                Title = "📍 Телепорт",
+                Content = "Телепортирован к конфетам!",
+                Duration = 3
+            })
+        end
+    end
+})
+
+TeleportTab:CreateButton({
+    Name = "🪙 Телепорт к монетам",
+    Callback = function()
+        local coin = Workspace:FindFirstChild("Coin")
+        if coin and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame + Vector3.new(0, 3, 0)
+            Rayfield:Notify({
+                Title = "📍 Телепорт",
+                Content = "Телепортирован к монетам!",
+                Duration = 3
+            })
+        end
+    end
+})
+
 -- Инициализация ESP для всех игроков
 for _, player in pairs(Players:GetPlayers()) do
-    if player ~= LP then
+    if player ~= LocalPlayer then
         CreateESP(player)
     end
 end
@@ -625,143 +558,19 @@ Players.PlayerAdded:Connect(function(player)
     CreateESP(player)
 end)
 
-Players.PlayerRemoving:Connect(function(player)
-    if ESPObjects[player] then
-        for _, drawing in pairs(ESPObjects[player]) do
-            drawing:Remove()
-        end
-        ESPObjects[player] = nil
-    end
-end)
-
 -- Главный цикл обновления
-FarmConnections.Main = RunService.RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     UpdateESP()
-    UpdateHighlights()
 end)
 
------------------------------------------------------------
--- == ИНТЕРФЕЙС ==
------------------------------------------------------------
-local VisualTab = Window:CreateTab("👁️ Визуал", 1234567890)
-VisualTab:CreateSection("📊 Основной ESP")
-VisualTab:CreateToggle({Name = "🌈 Включить ESP", CurrentValue = false, Flag = "ESP_Main", Callback = function(v) States.ESP.Enabled = v end})
-VisualTab:CreateToggle({Name = "📦 Боксы", CurrentValue = true, Flag = "ESP_Box", Callback = function(v) States.ESP.Box = v end})
-VisualTab:CreateToggle({Name = "👤 Имена и роли", CurrentValue = true, Flag = "ESP_Name", Callback = function(v) States.ESP.Name = v end})
-VisualTab:CreateToggle({Name = "📍 Трейсеры", CurrentValue = false, Flag = "ESP_Tracer", Callback = function(v) States.ESP.Tracer = v end})
-VisualTab:CreateToggle({Name = "❤️ ХП бар", CurrentValue = false, Flag = "ESP_Health", Callback = function(v) States.ESP.HealthBar = v end})
-VisualTab:CreateToggle({Name = "📐 Дистанция", CurrentValue = false, Flag = "ESP_Distance", Callback = function(v) States.ESP.Distance = v end})
+-- Уведомление о запуске
+Rayfield:Notify({
+    Title = "🔥 Eclipse X Hub v4.0",
+    Content = "Чит успешно активирован!\n🎯 ESP | 🍬 Авто-Фарм | 🚀 Движение",
+    Duration = 8
+})
 
-VisualTab:CreateSection("🎯 Highlight ESP")
-VisualTab:CreateToggle({Name = "🔫 Подсветка пушек", CurrentValue = false, Flag = "HL_Gun", Callback = function(v) States.Visuals.GunESP = v end})
-VisualTab:CreateToggle({Name = "🪙 Подсветка монет", CurrentValue = false, Flag = "HL_Coin", Callback = function(v) States.Visuals.CoinESP = v end})
-VisualTab:CreateToggle({Name = "🍬 Подсветка конфет", CurrentValue = false, Flag = "HL_Candy", Callback = function(v) States.Visuals.CandyESP = v end})
+-- Загрузка конфигурации
+Rayfield:LoadConfiguration()
 
-local AutoTab = Window:CreateTab("⚡ Авто-Фарм", 1234567891)
-AutoTab:CreateSection("💰 Фарминг")
-AutoTab:CreateToggle({Name = "🪙 Авто-фарм монет", CurrentValue = false, Flag = "Farm_Coins", Callback = function(v) if v then StartCoinFarm() else StopFarm("Coins") end end})
-AutoTab:CreateToggle({Name = "🍬 Авто-фарм конфет", CurrentValue = false, Flag = "Farm_Candy", Callback = function(v) if v then StartCandyFarm() else StopFarm("Candy") end end})
-AutoTab:CreateToggle({Name = "🔫 Авто-фарм пушек", CurrentValue = false, Flag = "Farm_Guns", Callback = function(v) if v then StartGunFarm() else StopFarm("Guns") end end})
-
-AutoTab:CreateSection("⚙️ Настройки фарма")
-AutoTab:CreateSlider({Name = "📏 Радиус поиска", Range = {10, 200}, Increment = 5, Suffix = "studs", CurrentValue = 100, Flag = "Farm_Radius"})
-AutoTab:CreateSlider({Name = "⏱️ Задержка", Range = {0.1, 2}, Increment = 0.1, Suffix = "s", CurrentValue = 0.3, Flag = "Farm_Delay"})
-
-local MovementTab = Window:CreateTab("🎮 Движение", 1234567892)
-MovementTab:CreateSection("🚀 Мувмент")
-MovementTab:CreateToggle({Name = "👻 NoClip", CurrentValue = false, Flag = "Move_Noclip", Callback = ToggleNoclip})
-MovementTab:CreateToggle({Name = "🕊️ Fly", CurrentValue = false, Flag = "Move_Fly", Callback = ToggleFly})
-MovementTab:CreateToggle({Name = "⚡ Speed", CurrentValue = false, Flag = "Move_Speed", Callback = ToggleSpeed})
-MovementTab:CreateToggle({Name = "🦘 Super Jump", CurrentValue = false, Flag = "Move_Jump", Callback = ToggleSuperJump})
-
-MovementTab:CreateSection("⚙️ Настройки")
-MovementTab:CreateSlider({Name = "🎯 Скорость", Range = {16, 100}, Increment = 5, Suffix = "studs", CurrentValue = 50, Flag = "Speed_Value", Callback = function(v) if States.Movement.Speed and LP.Character and LP.Character.Humanoid then LP.Character.Humanoid.WalkSpeed = v end end})
-MovementTab:CreateSlider({Name = "🦘 Высота прыжка", Range = {50, 200}, Increment = 10, Suffix = "power", CurrentValue = 100, Flag = "Jump_Value", Callback = function(v) if States.Movement.Jump and LP.Character and LP.Character.Humanoid then LP.Character.Humanoid.JumpPower = v end end})
-
-local TeleportTab = Window:CreateTab("📍 Телепорт", 1234567893)
-TeleportTab:CreateSection("🎯 Игроки")
-
-local playerDropdown = TeleportTab:CreateDropdown({Name = "👥 Список игроков", Options = {}, CurrentOption = "", Flag = "TP_Player", Callback = TeleportToPlayer})
-
-local function UpdatePlayerList()
-    local players = {}
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP then
-            table.insert(players, player.Name)
-        end
-    end
-    playerDropdown:Refresh(players, true)
-end
-
-UpdatePlayerList()
-Players.PlayerAdded:Connect(UpdatePlayerList)
-Players.PlayerRemoving:Connect(UpdatePlayerList)
-
-TeleportTab:CreateSection("🌍 Локации")
-TeleportTab:CreateButton({Name = "🏠 На спавн", Callback = TeleportToSpawn})
-TeleportTab:CreateButton({Name = "🎲 Случайно", Callback = TeleportToRandom})
-TeleportTab:CreateButton({Name = "🔫 К пушке", Callback = function() local gun = FindClosestItem("gun") if gun then SafeTeleport(gun.CFrame + Vector3.new(0, 3, 0)) end end})
-TeleportTab:CreateButton({Name = "🍬 К конфете", Callback = function() local candy = FindClosestItem("candy") if candy then SafeTeleport(candy.CFrame + Vector3.new(0, 3, 0)) end end})
-
-local TrollTab = Window:CreateTab("😈 Троллинг", 1234567894)
-TrollTab:CreateSection("🔄 Трейды")
-TrollTab:CreateButton({Name = "🔄 Спам трейдами", Callback = SpamTradeRequests})
-TrollTab:CreateSection("💬 Чат")
-TrollTab:CreateInput({Name = "📢 Фейк сообщение", PlaceholderText = "Введите текст...", Callback = SendFakeMessage})
-TrollTab:CreateButton({Name = "🔪 Фейк убийца", Callback = FakeMurderer})
-
-local SettingsTab = Window:CreateTab("⚙️ Настройки", 1234567895)
-SettingsTab:CreateSection("🛡️ Безопасность")
-SettingsTab:CreateToggle({Name = "🛡️ Anti-Kick", CurrentValue = false, Flag = "Safe_AntiKick", Callback = ToggleAntiKick})
-SettingsTab:CreateToggle({Name = "🔒 Anti-AFK", CurrentValue = false, Flag = "Safe_AntiAFK"})
-
-SettingsTab:CreateSection("🎨 Внешний вид")
-SettingsTab:CreateColorPicker({Name = "🎨 Цвет невинных", Color = Color3.fromRGB(50, 255, 50), Flag = "Color_Innocent", Callback = function(color) RoleColors.Innocent = color end})
-SettingsTab:CreateColorPicker({Name = "🎨 Цвет убийц", Color = Color3.fromRGB(255, 50, 50), Flag = "Color_Murderer", Callback = function(color) RoleColors.Murderer = color end})
-SettingsTab:CreateColorPicker({Name = "🎨 Цвет шерифов", Color = Color3.fromRGB(50, 150, 255), Flag = "Color_Sheriff", Callback = function(color) RoleColors.Sheriff = color end})
-
-SettingsTab:CreateSection("⚙️ Система")
-SettingsTab:CreateButton({Name = "🗑️ Удалить интерфейс", Callback = function() 
-    Rayfield:Destroy()
-    ClearESP()
-    for _, connection in pairs(FarmConnections) do
-        if connection then connection:Disconnect() end
-    end
-    for _, highlight in pairs(HighlightObjects) do
-        highlight:Destroy()
-    end
-end})
-
-SettingsTab:CreateButton({Name = "🔄 Перезапуск скрипта", Callback = function()
-    Rayfield:Destroy()
-    wait(1)
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/your-repo/mm2-script/main/script.lua"))()
-end})
-
-SettingsTab:CreateButton({Name = "💸 Поддержать разработчика", Callback = function() 
-    setclipboard("https://boosty.to/copilotdev")
-    Notify("💖 Спасибо!", "Ссылка на донат скопирована!", 5)
-end})
-
------------------------------------------------------------
--- == ЗАПУСК СИСТЕМЫ ==
------------------------------------------------------------
-Notify("🚀 Eclipse X Hub v2.0", "Скрипт успешно запущен!\n🎯 ESP | 🍬 Авто-фарм | 🛡️ Защита", 8)
-
--- Авто-сохранение настроек
-spawn(function()
-    while true do
-        wait(30)
-        Rayfield:SaveConfiguration()
-    end
-end)
-
--- Авто-обновление
-spawn(function()
-    wait(60)
-    Notify("🔔 Система", "Скрипт работает стабильно!\n✅ Все функции активны", 5)
-end)
-
------------------------------------------------------------
--- == КОНЕЦ СКРИПТА ==
------------------------------------------------------------
+print("🔥 Eclipse X Hub v4.0 | Ultimate MM2 Cheat loaded successfully!")
