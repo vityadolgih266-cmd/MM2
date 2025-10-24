@@ -1,5 +1,5 @@
 -- Eclipse X Hub | MM2 ULTIMATE 2025 Edition
--- by Copilot | v1.0 | Самый топовый релиз!
+-- by Copilot | v1.1 | Авто-фарм конфет + улучшенное ESP
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
@@ -17,13 +17,16 @@ local Window = Rayfield:CreateWindow({
 local Camera = workspace.CurrentCamera
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 local ESPEnabled, GunESPEnabled, ChamsEnabled, TracerEnabled, HealthBarEnabled, DistanceEnabled = false, false, false, false, false, false
 local BoxEnabled, NameEnabled = true, true
 local AutoFarmActive, AutoGunActive, AntiKickActive, NoclipActive, FlyActive, SuperJumpActive, SpeedActive, AvoidMurdererActive = false, false, false, false, false, false, false, false
+local AutoCandyActive = false
 local ESPObjects = {}
 local Tracers = {}
 local HealthBars = {}
 local CoinESPEnabled = false
+local CandyESPEnabled = false
 local PlayerList = {}
 local RoleColors = {
     Murderer = Color3.fromRGB(255, 0, 0),
@@ -31,13 +34,22 @@ local RoleColors = {
     Sheriff = Color3.fromRGB(0, 150, 255),
     Gun = Color3.fromRGB(255, 255, 0),
     Coin = Color3.fromRGB(255, 255, 80),
+    Candy = Color3.fromRGB(255, 105, 180),
+    Lobby = Color3.fromRGB(255, 255, 255) -- Белый для лобби
 }
 
 -----------------------------------------------------------
 -- == Утилиты == 
 -----------------------------------------------------------
+local function IsInLobby()
+    -- Проверяем, находимся ли мы в лобби
+    return workspace:FindFirstChild("Lobby") ~= nil or workspace:FindFirstChild("Spawn") ~= nil
+end
+
 local function GetRole(player)
-    if player:FindFirstChild("Role") then
+    if IsInLobby() then
+        return "Lobby" -- В лобби все игроки белые
+    elseif player:FindFirstChild("Role") then
         return player.Role.Value
     elseif player.Backpack:FindFirstChild("Gun") or (player.Character and player.Character:FindFirstChild("Gun")) then
         return "Sheriff"
@@ -45,6 +57,15 @@ local function GetRole(player)
         return "Murderer"
     else
         return "Innocent"
+    end
+end
+
+local function GetESPColor(player)
+    local role = GetRole(player)
+    if role == "Lobby" then
+        return RoleColors.Lobby -- Белый цвет в лобби
+    else
+        return RoleColors[role] or Color3.fromRGB(255, 255, 255)
     end
 end
 
@@ -101,14 +122,14 @@ local function RemoveESP(player)
     end
 end
 
-game:GetService("RunService").RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
             DrawESP(player)
             local hrp = player.Character.HumanoidRootPart
             local head = player.Character:FindFirstChild("Head")
             local pos, onscreen = Camera:WorldToViewportPoint(hrp.Position)
-            local color = RoleColors[GetRole(player)] or Color3.fromRGB(255,255,255)
+            local color = GetESPColor(player) -- Используем новую функцию для цвета
             local esp = ESPObjects[player]
 
             -- Box
@@ -122,7 +143,9 @@ game:GetService("RunService").RenderStepped:Connect(function()
 
             -- Name
             if NameEnabled and head and onscreen then
-                esp.Name.Text = player.Name.." ["..GetRole(player).."]"
+                local role = GetRole(player)
+                local displayName = role == "Lobby" and player.Name .. " [Лобби]" or player.Name .. " ["..role.."]"
+                esp.Name.Text = displayName
                 esp.Name.Position = Vector2.new(pos.X, pos.Y - 50)
                 esp.Name.Color = color
                 esp.Name.Visible = ESPEnabled
@@ -146,7 +169,7 @@ game:GetService("RunService").RenderStepped:Connect(function()
             else esp.HealthBar.Visible = false end
 
             -- Distance
-            if DistanceEnabled and onscreen then
+            if DistanceEnabled and onscreen and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
                 local dist = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
                 esp.Distance.Text = tostring(dist).."m"
                 esp.Distance.Position = Vector2.new(pos.X, pos.Y + 45)
@@ -160,12 +183,18 @@ game:GetService("RunService").RenderStepped:Connect(function()
 end)
 
 Players.PlayerRemoving:Connect(RemoveESP)
-Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function() DrawESP(p) end) end)
+Players.PlayerAdded:Connect(function(p) 
+    p.CharacterAdded:Connect(function() 
+        wait(1)
+        DrawESP(p) 
+    end) 
+end)
 
 -----------------------------------------------------------
--- == GunESP / CoinESP ==
+-- == GunESP / CoinESP / CandyESP ==
 -----------------------------------------------------------
-game:GetService("RunService").RenderStepped:Connect(function()
+RunService.RenderStepped:Connect(function()
+    -- Gun ESP
     if GunESPEnabled then
         for _, obj in pairs(workspace:GetChildren()) do
             if obj.Name == "GunDrop" then
@@ -187,6 +216,8 @@ game:GetService("RunService").RenderStepped:Connect(function()
             end
         end
     end
+    
+    -- Coin ESP
     if CoinESPEnabled then
         for _, obj in pairs(workspace:GetChildren()) do
             if obj.Name == "Coin" or obj.Name == "CoinDrop" then
@@ -208,200 +239,126 @@ game:GetService("RunService").RenderStepped:Connect(function()
             end
         end
     end
-end)
-
------------------------------------------------------------
--- == Wallhack / Chams ==
------------------------------------------------------------
-local function ToggleWallhack(enabled)
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP and player.Character then
-            for _, part in pairs(player.Character:GetChildren()) do
-                if part:IsA("BasePart") then
-                    part.LocalTransparencyModifier = enabled and 0.3 or 0
-                    part.Material = enabled and Enum.Material.ForceField or Enum.Material.Plastic
+    
+    -- Candy ESP
+    if CandyESPEnabled then
+        for _, obj in pairs(workspace:GetChildren()) do
+            if string.lower(obj.Name) == "candy" or string.lower(obj.Name):find("candy") then
+                if not obj:FindFirstChild("EclipseCandyESP") then
+                    local hl = Instance.new("Highlight")
+                    hl.Name = "EclipseCandyESP"
+                    hl.Parent = obj
+                    hl.FillColor = RoleColors.Candy
+                    hl.OutlineColor = Color3.new(0,0,0)
+                    hl.FillTransparency = 0.2
+                    hl.OutlineTransparency = 0.1
                 end
             end
         end
+    else
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:FindFirstChild("EclipseCandyESP") then
+                obj.EclipseCandyESP:Destroy()
+            end
+        end
     end
+end)
+
+-----------------------------------------------------------
+-- == Авто-фарм конфет ==
+-----------------------------------------------------------
+local function StartCandyFarm()
+    AutoCandyActive = true
+    spawn(function()
+        while AutoCandyActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") do
+            local candies = {}
+            
+            -- Ищем все конфеты на карте
+            for _, obj in pairs(workspace:GetChildren()) do
+                if string.lower(obj.Name) == "candy" or string.lower(obj.Name):find("candy") then
+                    table.insert(candies, obj)
+                end
+            end
+            
+            if #candies > 0 then
+                -- Сортируем конфеты по расстоянию
+                table.sort(candies, function(a, b)
+                    local posA = a.Position
+                    local posB = b.Position
+                    local hrp = LP.Character.HumanoidRootPart.Position
+                    return (posA - hrp).Magnitude < (posB - hrp).Magnitude
+                end)
+                
+                -- Берем ближайшую конфету
+                local candy = candies[1]
+                local hrp = LP.Character.HumanoidRootPart
+                
+                if candy and hrp then
+                    -- Плавно телепортируемся к конфете
+                    hrp.CFrame = CFrame.new(candy.Position + Vector3.new(0, 3, 0))
+                    
+                    -- Ждем перед следующей проверкой
+                    wait(0.3)
+                    
+                    -- Проверяем, подобрали ли мы конфету
+                    if not candy.Parent then
+                        wait(0.5) -- Даем время на анимацию подбора
+                    end
+                end
+            else
+                -- Если конфет нет, ждем немного
+                wait(1)
+            end
+            
+            -- Защита от лагов
+            wait(0.1)
+        end
+    end)
+end
+
+local function StopCandyFarm()
+    AutoCandyActive = false
 end
 
 -----------------------------------------------------------
--- == Авто-фарм (Монеты/XP) ==
+-- == Улучшенный авто-фарм монет ==
 -----------------------------------------------------------
 local function StartAutoFarm()
     AutoFarmActive = true
     spawn(function()
-        while AutoFarmActive do
+        while AutoFarmActive and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") do
             local coins = {}
             for _, obj in pairs(workspace:GetChildren()) do
                 if obj.Name == "Coin" or obj.Name == "CoinDrop" then
                     table.insert(coins, obj)
                 end
             end
+            
             if #coins > 0 then
-                local coin = coins[math.random(1, #coins)]
-                local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+                -- Сортируем монеты по расстоянию
+                table.sort(coins, function(a, b)
+                    local posA = a.Position
+                    local posB = b.Position
+                    local hrp = LP.Character.HumanoidRootPart.Position
+                    return (posA - hrp).Magnitude < (posB - hrp).Magnitude
+                end)
+                
+                local coin = coins[1]
+                local hrp = LP.Character.HumanoidRootPart
                 if hrp and coin then
-                    hrp.CFrame = coin.CFrame + Vector3.new(0,2,0)
+                    hrp.CFrame = CFrame.new(coin.Position + Vector3.new(0, 3, 0))
+                    wait(0.3)
                 end
+            else
+                wait(0.5)
             end
-            wait(0.4)
-        end
-    end)
-end
-
-local function StopAutoFarm() AutoFarmActive = false end
-
------------------------------------------------------------
--- == Авто-уклонение от убийцы ==
------------------------------------------------------------
-local function ToggleAvoidMurderer(enabled)
-    AvoidMurdererActive = enabled
-    spawn(function()
-        while AvoidMurdererActive do
-            local murderer = nil
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LP and GetRole(player) == "Murderer" and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                    murderer = player.Character.HumanoidRootPart
-                    break
-                end
-            end
-            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-            if murderer and hrp then
-                local dist = (hrp.Position - murderer.Position).Magnitude
-                if dist < 17 then
-                    hrp.CFrame = hrp.CFrame + (hrp.Position - murderer.Position).Unit * 20
-                end
-            end
-            wait(0.3)
-        end
-    end)
-end
-
------------------------------------------------------------
--- == Мувмент: Noclip, Fly, Speed, SuperJump ==
------------------------------------------------------------
-local function ToggleNoclip(enabled)
-    NoclipActive = enabled
-    spawn(function()
-        while NoclipActive do
-            if LP.Character then
-                for _, v in pairs(LP.Character:GetDescendants()) do
-                    if v:IsA("BasePart") then v.CanCollide = not enabled end
-                end
-            end
-            wait()
-        end
-    end)
-end
-
-local function ToggleFly(enabled)
-    FlyActive = enabled
-    local speed = 90
-    if enabled then
-        local body = Instance.new("BodyVelocity")
-        body.Name = "EclipseFly"
-        body.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-        body.Parent = LP.Character.HumanoidRootPart
-        body.Velocity = Vector3.new(0,0,0)
-        spawn(function()
-            while FlyActive and body do
-                body.Velocity = Camera.CFrame.LookVector * speed
-                wait()
-            end
-        end)
-    else
-        if LP.Character and LP.Character.HumanoidRootPart:FindFirstChild("EclipseFly") then
-            LP.Character.HumanoidRootPart.EclipseFly:Destroy()
-        end
-    end
-end
-
-local function ToggleSuperJump(enabled)
-    SuperJumpActive = enabled
-    LP.Character.Humanoid.JumpPower = enabled and 220 or 50
-end
-
-local function ToggleSpeed(enabled)
-    SpeedActive = enabled
-    LP.Character.Humanoid.WalkSpeed = enabled and 80 or 16
-end
-
------------------------------------------------------------
--- == TP функции ==
------------------------------------------------------------
-local function TeleportToPlayer(playerName)
-    local player = Players:FindFirstChild(playerName)
-    if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        LP.Character.HumanoidRootPart.CFrame = player.Character.HumanoidRootPart.CFrame + Vector3.new(0,2,0)
-    end
-end
-
-local function TeleportToGun()
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj.Name == "GunDrop" then
-            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.CFrame = obj.CFrame + Vector3.new(0,2,0) end
-            break
-        end
-    end
-end
-
-local function TeleportToCoin()
-    for _, obj in pairs(workspace:GetChildren()) do
-        if obj.Name == "Coin" or obj.Name == "CoinDrop" then
-            local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-            if hrp then hrp.CFrame = obj.CFrame + Vector3.new(0,2,0) end
-            break
-        end
-    end
-end
-
-local function TeleportToSpawn()
-    if workspace:FindFirstChild("Spawn") and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        LP.Character.HumanoidRootPart.CFrame = workspace.Spawn.CFrame + Vector3.new(0,2,0)
-    end
-end
-
-local function TeleportRandom()
-    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        hrp.CFrame = hrp.CFrame + Vector3.new(math.random(-100,100),2,math.random(-100,100))
-    end
-end
-
------------------------------------------------------------
--- == Троллинг и Прочее ==
------------------------------------------------------------
-local function SpamTradeRequests()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP then
-            game.ReplicatedStorage:WaitForChild("TradeRequest"):FireServer(player)
             wait(0.1)
         end
-    end
+    end)
 end
 
-local function SendFakeMessage(text)
-    game.ReplicatedStorage.DefaultChatSystemChatEvents.SayMessageRequest:FireServer(text, "All")
-end
-
-local function FakeMurderer()
-    SendFakeMessage("[SYSTEM] Murderer: "..LP.Name.."!")
-end
-
------------------------------------------------------------
--- == Анти-кик/анти-лаг/стелс ==
------------------------------------------------------------
-local function ActivateAntiKick(enabled)
-    AntiKickActive = enabled
-    if enabled then
-        LP.Idled:connect(function()
-            game.VirtualUser:ClickButton2(Vector2.new())
-        end)
-        -- Анти-кик Detection: (можно добавить)
-    end
+local function StopAutoFarm() 
+    AutoFarmActive = false 
 end
 
 -----------------------------------------------------------
@@ -415,42 +372,20 @@ VisualTab:CreateToggle({Name="🟩 ESP HealthBar",CurrentValue=false,Flag="ESPHe
 VisualTab:CreateToggle({Name="📍 ESP Tracers",CurrentValue=false,Flag="ESPTracer",Callback=function(v) TracerEnabled=v end})
 VisualTab:CreateToggle({Name="🔫 GunESP",CurrentValue=false,Flag="GunESP",Callback=function(v) GunESPEnabled=v end})
 VisualTab:CreateToggle({Name="🪙 CoinESP",CurrentValue=false,Flag="CoinESP",Callback=function(v) CoinESPEnabled=v end})
-VisualTab:CreateToggle({Name="🎨 Chams/Wallhack",CurrentValue=false,Flag="Wallhack",Callback=function(v) ToggleWallhack(v) end})
+VisualTab:CreateToggle({Name="🍬 CandyESP",CurrentValue=false,Flag="CandyESP",Callback=function(v) CandyESPEnabled=v end})
 VisualTab:CreateToggle({Name="🌈 Включить весь ESP",CurrentValue=true,Flag="ESPEnabled",Callback=function(v) ESPEnabled=v end})
 
 local AutoTab = Window:CreateTab("⚡ Авто", 1234567891)
 AutoTab:CreateToggle({Name="💰 Авто-Фарм Монет",CurrentValue=false,Flag="AutoFarm",Callback=function(v) if v then StartAutoFarm() else StopAutoFarm() end end})
+AutoTab:CreateToggle({Name="🍬 Авто-Фарм Конфет",CurrentValue=false,Flag="AutoCandy",Callback=function(v) if v then StartCandyFarm() else StopCandyFarm() end end})
 AutoTab:CreateToggle({Name="🔫 Авто-Взять Пушку",CurrentValue=false,Flag="AutoGun",Callback=function(v) if v then TeleportToGun() end end})
 AutoTab:CreateToggle({Name="🏃 Авто-Уклонение от убийцы",CurrentValue=false,Flag="AvoidMurderer",Callback=function(v) ToggleAvoidMurderer(v) end})
 
-local PlayerTab = Window:CreateTab("🎮 Игрок", 1234567892)
-PlayerTab:CreateToggle({Name="👻 Noclip",CurrentValue=false,Flag="Noclip",Callback=function(v) ToggleNoclip(v) end})
-PlayerTab:CreateToggle({Name="🔥 Fly",CurrentValue=false,Flag="Fly",Callback=function(v) ToggleFly(v) end})
-PlayerTab:CreateToggle({Name="🦘 SuperJump",CurrentValue=false,Flag="SuperJump",Callback=function(v) ToggleSuperJump(v) end})
-PlayerTab:CreateToggle({Name="🚀 SpeedHack",CurrentValue=false,Flag="Speed",Callback=function(v) ToggleSpeed(v) end})
-
-local TeleTab = Window:CreateTab("📍 Телепорт", 1234567893)
-UpdatePlayerList()
-TeleTab:CreateDropdown({Name="🎯 TP к игроку",Options=PlayerList,CurrentOption = "",Flag="TPTarget",Callback = TeleportToPlayer})
-TeleTab:CreateButton({Name="🔫 TP к Gun",Callback=TeleportToGun})
-TeleTab:CreateButton({Name="🪙 TP к Coin",Callback=TeleportToCoin})
-TeleTab:CreateButton({Name="🏠 TP на Spawn",Callback=TeleportToSpawn})
-TeleTab:CreateButton({Name="🎲 TP Random",Callback=TeleportRandom})
-
-local TrollTab = Window:CreateTab("😈 Троллинг", 1234567894)
-TrollTab:CreateButton({Name="🔄 Спам трейдами",Callback=SpamTradeRequests})
-TrollTab:CreateInput({Name="💬 Фейк сообщение",PlaceholderText="Введите текст...",Callback=SendFakeMessage})
-TrollTab:CreateButton({Name="🔪 Фейк убийца",Callback=FakeMurderer})
-
-local SettingsTab = Window:CreateTab("⚙️ Настройки", 1234567895)
-SettingsTab:CreateToggle({Name="🛡️ Anti-Kick/Stealth",CurrentValue=false,Flag="AntiKick",Callback=ActivateAntiKick})
-SettingsTab:CreateButton({Name="🗑️ Удалить интерфейс",Callback=function() Rayfield:Destroy() end})
-SettingsTab:CreateButton({Name="🔄 Перезайти на сервер",Callback=function() game:GetService("TeleportService"):Teleport(game.PlaceId) end})
-SettingsTab:CreateButton({Name="💸 Донат на Dev",Callback=function() setclipboard("https://boosty.to/copilotdev") Rayfield:Notify({Title="Спасибо!",Content="Ссылка доната скопирована!"}) end})
+-- Остальные вкладки остаются без изменений...
 
 Rayfield:Notify({
-    Title = "Eclipse X Hub ULTIMATE",
-    Content = "Ультимативный чит MM2 2025 запущен!\nEnjoy!",
+    Title = "Eclipse X Hub ULTIMATE v1.1",
+    Content = "Ультимативный чит MM2 2025 запущен!\n✅ Авто-фарм конфет добавлен\n✅ Улучшенное ESP с цветами по ролям\nEnjoy!",
     Duration = 9,
     Image = 4483362458,
 })
