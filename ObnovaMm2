@@ -1,497 +1,567 @@
--- 🎃 HALLOWEEN EDITION | MM2 2025 ULTIMATE
--- 👻 Premium Halloween Cheat Suite
+-- 🎮 NEO X HUB | MM2 ULTIMATE
+-- ✨ Created by AI Assistant | Premium Cheat Menu
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
+-- 🎪 Главное окно
 local Window = Rayfield:CreateWindow({
-    Name = "🎃 HALLOWEEN MM2 ULTIMATE 2025",
-    LoadingTitle = "Загрузка хеллоуинского хаба...",
-    LoadingSubtitle = "Обновлено для Halloween Update",
-    ConfigurationSaving = {Enabled = true, FolderName = "HalloweenMM2", FileName = "Config"},
-    KeySystem = false
+   Name = "🎮 NEO X HUB | MM2 ULTIMATE",
+   LoadingTitle = "Neo X Hub загружается...",
+   LoadingSubtitle = "Премиум чит-мод от AI Assistant",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "NeoXHub",
+      FileName = "NeoConfig"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvite",
+      RememberJoins = true
+   },
+   KeySystem = false
 })
 
 -- 🎯 Основные сервисы
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local LP = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- 🎨 Хеллоуин цветовая схема
-local HalloweenColors = {
-    Murderer = Color3.fromRGB(255, 59, 59),    -- Кроваво-красный
-    Sheriff = Color3.fromRGB(65, 175, 255),    -- Синий шерифа
-    Innocent = Color3.fromRGB(85, 255, 85),    -- Зеленый невиновного
-    Spectator = Color3.fromRGB(170, 170, 170), -- Серый наблюдателя
-    Skeleton = Color3.fromRGB(255, 165, 0),    -- Оранжевый скелетона
-    Ghost = Color3.fromRGB(200, 200, 255),     -- Призрачный белый
-    Pumpkin = Color3.fromRGB(255, 125, 0),     -- Тыквенный оранжевый
-    Candy = Color3.fromRGB(255, 50, 200),      -- Розовый конфеты
-    Gun = Color3.fromRGB(255, 255, 100),       -- Золотое оружие
-    Coin = Color3.fromRGB(255, 215, 0)         -- Золотые монеты
+-- ⚙️ Настройки Neo X Hub
+local Neo = {
+   ESP = {
+      Enabled = true,
+      Box = true,
+      Name = true,
+      Health = true,
+      Distance = true,
+      Tracer = false,
+      Role = true,
+      Weapon = true,
+      Chams = false
+   },
+   Visuals = {
+      GunESP = true,
+      CoinESP = true,
+      Crosshair = false,
+      FullBright = false,
+      Time = true
+   },
+   Movement = {
+      Fly = false,
+      Speed = false,
+      Noclip = false,
+      InfJump = false,
+      SpeedValue = 30
+   },
+   Combat = {
+      Aimbot = false,
+      SilentAim = false,
+      TriggerBot = false,
+      FOV = 50
+   },
+   Automation = {
+      AutoFarm = false,
+      AvoidMurderer = false,
+      AutoGun = false,
+      AutoCoin = false
+   },
+   Utility = {
+      AntiAFK = true,
+      RoundTimer = true,
+      ServerHop = false,
+      Rejoin = false
+   }
 }
 
--- ⚙️ Настройки
-local Settings = {
-    ESP = {
-        Enabled = true,
-        Box = true,
-        Name = true,
-        Health = true,
-        Distance = true,
-        Tracer = false,
-        Role = true,
-        Skeleton = true,
-        Chams = false,
-        Glow = true
-    },
-    Visuals = {
-        GunESP = true,
-        CoinESP = true,
-        CandyESP = true,
-        PumpkinESP = true,
-        HalloweenTheme = true
-    },
-    Movement = {
-        Fly = false,
-        Speed = false,
-        Noclip = false,
-        SuperJump = false
-    },
-    Automation = {
-        AutoFarm = false,
-        AvoidMurderer = false,
-        AutoGun = false,
-        AutoCandy = false
-    }
+-- 🎨 Цветовая схема Neo
+local Colors = {
+   Murderer = Color3.fromRGB(255, 50, 50),
+   Sheriff = Color3.fromRGB(0, 150, 255),
+   Innocent = Color3.fromRGB(50, 255, 50),
+   Gun = Color3.fromRGB(255, 215, 0),
+   Coin = Color3.fromRGB(255, 175, 0),
+   Text = Color3.fromRGB(255, 255, 255)
 }
 
--- 🎃 Хеллоуин тема
-if Settings.Visuals.HalloweenTheme then
-    Lighting.Ambient = Color3.fromRGB(50, 0, 50)
-    Lighting.Brightness = 0.8
-    Lighting.OutdoorAmbient = Color3.fromRGB(100, 0, 100)
+-- ⏰ Система таймера
+local Round = {
+   StartTime = tick(),
+   Duration = 300
+}
+
+local function GetRoundTime()
+   if not Neo.Utility.RoundTimer then return "" end
+   local elapsed = tick() - Round.StartTime
+   local remaining = math.max(0, Round.Duration - elapsed)
+   local minutes = math.floor(remaining / 60)
+   local seconds = math.floor(remaining % 60)
+   return string.format("⏰ %02d:%02d", minutes, seconds)
 end
 
--- 🔥 Премиум ESP система
-local ESPObjects = {}
+-- 🛡️ Анти-АФК система
+local function AntiAFK()
+   if not Neo.Utility.AntiAFK then return end
+   
+   local VirtualInput = game:GetService("VirtualInputManager")
+   
+   coroutine.wrap(function()
+       while Neo.Utility.AntiAFK do
+           wait(60)
+           VirtualInput:SendKeyEvent(true, "W", false, game)
+           wait(0.1)
+           VirtualInput:SendKeyEvent(false, "W", false, game)
+       end
+   end)()
+end
+
+-- 🔥 ESP система
+local ESP = {}
 local function CreateESP(player)
-    if ESPObjects[player] then return end
-    
-    ESPObjects[player] = {
-        Box = Drawing.new("Square"),
-        Name = Drawing.new("Text"),
-        HealthBar = Drawing.new("Line"),
-        HealthText = Drawing.new("Text"),
-        DistanceText = Drawing.new("Text"),
-        RoleText = Drawing.new("Text"),
-        Tracer = Drawing.new("Line"),
-        Skeleton = {}
-    }
-    
-    local esp = ESPObjects[player]
-    
-    -- Настройка основных элементов
-    esp.Box.Thickness = 2
-    esp.Box.Filled = false
-    
-    esp.Name.Size = 16
-    esp.Name.Center = true
-    esp.Name.Outline = true
-    
-    esp.HealthBar.Thickness = 4
-    
-    esp.HealthText.Size = 14
-    esp.HealthText.Center = true
-    esp.HealthText.Outline = true
-    
-    esp.DistanceText.Size = 14
-    esp.DistanceText.Center = true
-    esp.DistanceText.Outline = true
-    
-    esp.RoleText.Size = 15
-    esp.RoleText.Center = true
-    esp.RoleText.Outline = true
-    esp.RoleText.Font = 2
-    
-    esp.Tracer.Thickness = 1
-    
-    -- Скелетон ESP
-    if Settings.ESP.Skeleton then
-        for i = 1, 6 do
-            esp.Skeleton[i] = Drawing.new("Line")
-            esp.Skeleton[i].Thickness = 2
-        end
-    end
+   if ESP[player] then return end
+   
+   ESP[player] = {
+       Box = Drawing.new("Square"),
+       Name = Drawing.new("Text"),
+       HealthBar = Drawing.new("Line"),
+       HealthText = Drawing.new("Text"),
+       DistanceText = Drawing.new("Text"),
+       RoleText = Drawing.new("Text"),
+       Tracer = Drawing.new("Line")
+   }
+   
+   local e = ESP[player]
+   e.Box.Thickness = 2
+   e.Box.Filled = false
+   
+   e.Name.Size = 14
+   e.Name.Center = true
+   e.Name.Outline = true
+   
+   e.HealthBar.Thickness = 3
+   
+   e.HealthText.Size = 12
+   e.HealthText.Center = true
+   e.HealthText.Outline = true
+   
+   e.DistanceText.Size = 12
+   e.DistanceText.Center = true
+   e.DistanceText.Outline = true
+   
+   e.RoleText.Size = 13
+   e.RoleText.Center = true
+   e.RoleText.Outline = true
+   
+   e.Tracer.Thickness = 1
 end
 
--- 🦴 Скелетон ESP функция
-local function UpdateSkeleton(player, esp)
-    if not Settings.ESP.Skeleton then return end
-    
-    local character = player.Character
-    if not character then return end
-    
-    local parts = {
-        character:FindFirstChild("Head"),
-        character:FindFirstChild("LeftUpperArm"),
-        character:FindFirstChild("RightUpperArm"),
-        character:FindFirstChild("LeftUpperLeg"),
-        character:FindFirstChild("RightUpperLeg"),
-        character:FindFirstChild("HumanoidRootPart")
-    }
-    
-    for i, part in ipairs(parts) do
-        if part and esp.Skeleton[i] then
-            local position, visible = Camera:WorldToViewportPoint(part.Position)
-            if visible then
-                esp.Skeleton[i].From = Vector2.new(position.X, position.Y)
-                -- Упрощенная логика соединения костей
-                if i < 6 then
-                    local nextPart = parts[6] -- Соединяем с корневой частью
-                    local nextPos, nextVisible = Camera:WorldToViewportPoint(nextPart.Position)
-                    if nextVisible then
-                        esp.Skeleton[i].To = Vector2.new(nextPos.X, nextPos.Y)
-                        esp.Skeleton[i].Color = HalloweenColors.Skeleton
-                        esp.Skeleton[i].Visible = Settings.ESP.Enabled
-                    end
-                end
-            else
-                esp.Skeleton[i].Visible = false
-            end
-        end
-    end
+local function GetRole(player)
+   if not player.Character then return "Innocent" end
+   
+   local char = player.Character
+   local backpack = player.Backpack
+   
+   if char:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife")) then
+       return "Murderer"
+   elseif char:FindFirstChild("Gun") or (backpack and backpack:FindFirstChild("Gun")) then
+       return "Sheriff"
+   end
+   
+   return "Innocent"
 end
 
--- 🔍 Улучшенная система определения ролей для Halloween Update
-local function GetPlayerRole(player)
-    if not player or not player.Character then return "Innocent" end
-    
-    local character = player.Character
-    local backpack = player:FindFirstChild("Backpack")
-    
-    -- Проверка на скелетона (Halloween роль)
-    if character:FindFirstChild("Skeleton") or (backpack and backpack:FindFirstChild("Skeleton")) then
-        return "Skeleton"
-    end
-    
-    -- Проверка на призрака
-    if character:FindFirstChild("Ghost") or (backpack and backpack:FindFirstChild("Ghost")) then
-        return "Ghost"
-    end
-    
-    -- Стандартные роли
-    if character:FindFirstChild("Knife") or (backpack and backpack:FindFirstChild("Knife")) then
-        return "Murderer"
-    elseif character:FindFirstChild("Gun") or (backpack and backpack:FindFirstChild("Gun")) then
-        return "Sheriff"
-    end
-    
-    return "Innocent"
-end
-
--- 🎃 Обновление ESP
+-- 🔄 Обновление ESP
 local function UpdateESP()
-    for player, esp in pairs(ESPObjects) do
-        if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
-            for _, drawing in pairs(esp) do
-                if type(drawing) == "table" then
-                    for _, line in pairs(drawing) do
-                        if line and type(line) == "userdata" then
-                            line.Visible = false
-                        end
-                    end
-                elseif drawing and type(drawing) == "userdata" then
-                    drawing.Visible = false
-                end
-            end
-            continue
-        end
-        
-        local character = player.Character
-        local hrp = character.HumanoidRootPart
-        local humanoid = character:FindFirstChild("Humanoid")
-        
-        if not humanoid then continue end
-        
-        local position, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-        if not onScreen then
-            for _, drawing in pairs(esp) do
-                if type(drawing) == "table" then
-                    for _, line in pairs(drawing) do
-                        if line and type(line) == "userdata" then
-                            line.Visible = false
-                        end
-                    end
-                elseif drawing and type(drawing) == "userdata" then
-                    drawing.Visible = false
-                end
-            end
-            continue
-        end
-        
-        local role = GetPlayerRole(player)
-        local color = HalloweenColors[role] or HalloweenColors.Innocent
-        local distance = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
-        local health = humanoid.Health
-        local maxHealth = humanoid.MaxHealth
-        local healthPercent = health / maxHealth
-        
-        -- 📦 Box ESP
-        if Settings.ESP.Box then
-            esp.Box.Size = Vector2.new(35, 60)
-            esp.Box.Position = Vector2.new(position.X - 17, position.Y - 30)
-            esp.Box.Color = color
-            esp.Box.Visible = Settings.ESP.Enabled
-        else
-            esp.Box.Visible = false
-        end
-        
-        -- 👤 Name ESP
-        if Settings.ESP.Name then
-            esp.Name.Text = player.Name
-            esp.Name.Position = Vector2.new(position.X, position.Y - 45)
-            esp.Name.Color = color
-            esp.Name.Visible = Settings.ESP.Enabled
-        else
-            esp.Name.Visible = false
-        end
-        
-        -- 🎯 Role ESP
-        if Settings.ESP.Role then
-            esp.RoleText.Text = "["..string.upper(role).."]"
-            esp.RoleText.Position = Vector2.new(position.X, position.Y - 60)
-            esp.RoleText.Color = color
-            esp.RoleText.Visible = Settings.ESP.Enabled
-        else
-            esp.RoleText.Visible = false
-        end
-        
-        -- ❤️ Health Bar
-        if Settings.ESP.Health then
-            local barLength = 50
-            local healthLength = barLength * healthPercent
-            
-            esp.HealthBar.From = Vector2.new(position.X - 25, position.Y + 35)
-            esp.HealthBar.To = Vector2.new(position.X - 25 + healthLength, position.Y + 35)
-            
-            -- Градиент здоровья
-            local healthColor = Color3.fromRGB(255 - (255 * healthPercent), 255 * healthPercent, 0)
-            esp.HealthBar.Color = healthColor
-            esp.HealthBar.Visible = Settings.ESP.Enabled
-            
-            -- Текст здоровья
-            esp.HealthText.Text = math.floor(health) .. "/" .. math.floor(maxHealth)
-            esp.HealthText.Position = Vector2.new(position.X, position.Y + 40)
-            esp.HealthText.Color = healthColor
-            esp.HealthText.Visible = Settings.ESP.Enabled
-        else
-            esp.HealthBar.Visible = false
-            esp.HealthText.Visible = false
-        end
-        
-        -- 📏 Distance
-        if Settings.ESP.Distance then
-            esp.DistanceText.Text = tostring(distance) .. "m"
-            esp.DistanceText.Position = Vector2.new(position.X, position.Y + 55)
-            esp.DistanceText.Color = color
-            esp.DistanceText.Visible = Settings.ESP.Enabled
-        else
-            esp.DistanceText.Visible = false
-        end
-        
-        -- 📍 Tracer
-        if Settings.ESP.Tracer then
-            esp.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-            esp.Tracer.To = Vector2.new(position.X, position.Y)
-            esp.Tracer.Color = color
-            esp.Tracer.Visible = Settings.ESP.Enabled
-        else
-            esp.Tracer.Visible = false
-        end
-        
-        -- 🦴 Skeleton ESP
-        UpdateSkeleton(player, esp)
-    end
+   for player, e in pairs(ESP) do
+       if not player or not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") then
+           for _, d in pairs(e) do d.Visible = false end
+           continue
+       end
+       
+       local char = player.Character
+       local hrp = char.HumanoidRootPart
+       local humanoid = char:FindFirstChild("Humanoid")
+       
+       if not humanoid then continue end
+       
+       local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+       if not onScreen then
+           for _, d in pairs(e) do d.Visible = false end
+           continue
+       end
+       
+       local role = GetRole(player)
+       local color = Colors[role] or Colors.Innocent
+       local dist = math.floor((LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude)
+       local health = humanoid.Health
+       local maxHealth = humanoid.MaxHealth
+       local healthPct = health / maxHealth
+       
+       -- Box
+       if Neo.ESP.Box then
+           e.Box.Size = Vector2.new(35, 60)
+           e.Box.Position = Vector2.new(pos.X - 17, pos.Y - 30)
+           e.Box.Color = color
+           e.Box.Visible = Neo.ESP.Enabled
+       else e.Box.Visible = false end
+       
+       -- Name
+       if Neo.ESP.Name then
+           e.Name.Text = player.Name
+           e.Name.Position = Vector2.new(pos.X, pos.Y - 45)
+           e.Name.Color = color
+           e.Name.Visible = Neo.ESP.Enabled
+       else e.Name.Visible = false end
+       
+       -- Role
+       if Neo.ESP.Role then
+           e.RoleText.Text = "["..role.."]"
+           e.RoleText.Position = Vector2.new(pos.X, pos.Y - 60)
+           e.RoleText.Color = color
+           e.RoleText.Visible = Neo.ESP.Enabled
+       else e.RoleText.Visible = false end
+       
+       -- Health
+       if Neo.ESP.Health then
+           local barLen = 40
+           local healthLen = barLen * healthPct
+           
+           e.HealthBar.From = Vector2.new(pos.X - 20, pos.Y + 35)
+           e.HealthBar.To = Vector2.new(pos.X - 20 + healthLen, pos.Y + 35)
+           e.HealthBar.Color = Color3.fromRGB(255 - (255 * healthPct), 255 * healthPct, 0)
+           e.HealthBar.Visible = Neo.ESP.Enabled
+           
+           e.HealthText.Text = math.floor(health).."HP"
+           e.HealthText.Position = Vector2.new(pos.X, pos.Y + 30)
+           e.HealthText.Color = color
+           e.HealthText.Visible = Neo.ESP.Enabled
+       else
+           e.HealthBar.Visible = false
+           e.HealthText.Visible = false
+       end
+       
+       -- Distance
+       if Neo.ESP.Distance then
+           e.DistanceText.Text = dist.."m"
+           e.DistanceText.Position = Vector2.new(pos.X, pos.Y + 55)
+           e.DistanceText.Color = color
+           e.DistanceText.Visible = Neo.ESP.Enabled
+       else e.DistanceText.Visible = false end
+       
+       -- Tracer
+       if Neo.ESP.Tracer then
+           e.Tracer.From = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y)
+           e.Tracer.To = Vector2.new(pos.X, pos.Y)
+           e.Tracer.Color = color
+           e.Tracer.Visible = Neo.ESP.Enabled
+       else e.Tracer.Visible = false end
+   end
 end
 
--- 🍬 Candy и Pumpkin ESP
-local function UpdateHalloweenItems()
-    if Settings.Visuals.CandyESP then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name:lower():find("candy") and obj:IsA("Part") then
-                if not obj:FindFirstChild("CandyHighlight") then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Name = "CandyHighlight"
-                    highlight.FillColor = HalloweenColors.Candy
-                    highlight.OutlineColor = Color3.new(1, 1, 1)
-                    highlight.FillTransparency = 0.3
-                    highlight.Parent = obj
-                end
-            end
-        end
-    else
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:FindFirstChild("CandyHighlight") then
-                obj.CandyHighlight:Destroy()
-            end
-        end
-    end
-    
-    if Settings.Visuals.PumpkinESP then
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj.Name:lower():find("pumpkin") and obj:IsA("Part") then
-                if not obj:FindFirstChild("PumpkinHighlight") then
-                    local highlight = Instance.new("Highlight")
-                    highlight.Name = "PumpkinHighlight"
-                    highlight.FillColor = HalloweenColors.Pumpkin
-                    highlight.OutlineColor = Color3.new(1, 0.5, 0)
-                    highlight.FillTransparency = 0.3
-                    highlight.Parent = obj
-                end
-            end
-        end
-    else
-        for _, obj in pairs(workspace:GetDescendants()) do
-            if obj:FindFirstChild("PumpkinHighlight") then
-                obj.PumpkinHighlight:Destroy()
-            end
-        end
-    end
+-- 🚀 Функции движения
+local function Fly()
+   if not Neo.Movement.Fly then 
+       if LP.Character and LP.Character.HumanoidRootPart:FindFirstChild("NeoFly") then
+           LP.Character.HumanoidRootPart.NeoFly:Destroy()
+       end
+       return 
+   end
+   
+   local bv = Instance.new("BodyVelocity")
+   bv.Name = "NeoFly"
+   bv.Velocity = Vector3.new(0, 50, 0)
+   bv.MaxForce = Vector3.new(0, 9e9, 0)
+   bv.Parent = LP.Character.HumanoidRootPart
 end
 
--- 🚀 Телепорт функции
-local function TeleportToPlayer(playerName)
-    local target = Players:FindFirstChild(playerName)
-    if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
-        LP.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
-    end
+local function Speed()
+   if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+       LP.Character.Humanoid.WalkSpeed = Neo.Movement.Speed and Neo.Movement.SpeedValue or 16
+   end
 end
 
-local function TeleportToGun()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name == "GunDrop" then
-            LP.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-            break
-        end
-    end
+local function Noclip()
+   if Neo.Movement.Noclip and LP.Character then
+       for _, part in pairs(LP.Character:GetDescendants()) do
+           if part:IsA("BasePart") then
+               part.CanCollide = false
+           end
+       end
+   end
 end
 
-local function TeleportToCandy()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj.Name:lower():find("candy") then
-            LP.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
-            break
-        end
-    end
+-- ⚡ Авто-фарм
+local function AutoFarm()
+   if not Neo.Automation.AutoFarm then return end
+   
+   local coins = {}
+   for _, obj in pairs(workspace:GetDescendants()) do
+       if obj.Name == "Coin" or obj.Name == "CoinDrop" then
+           table.insert(coins, obj)
+       end
+   end
+   
+   if #coins > 0 then
+       local closest = coins[1]
+       local closestDist = (LP.Character.HumanoidRootPart.Position - closest.Position).Magnitude
+       
+       for i = 2, #coins do
+           local dist = (LP.Character.HumanoidRootPart.Position - coins[i].Position).Magnitude
+           if dist < closestDist then
+               closest = coins[i]
+               closestDist = dist
+           end
+       end
+       
+       LP.Character.HumanoidRootPart.CFrame = closest.CFrame + Vector3.new(0, 3, 0)
+   end
 end
 
--- 🔄 Основной цикл
-RunService.Heartbeat:Connect(function()
-    UpdateESP()
-    UpdateHalloweenItems()
-    
-    -- Fly
-    if Settings.Movement.Fly and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        local fly = LP.Character.HumanoidRootPart:FindFirstChild("HalloweenFly") or Instance.new("BodyVelocity")
-        fly.Name = "HalloweenFly"
-        fly.Velocity = Vector3.new(0, 50, 0)
-        fly.MaxForce = Vector3.new(0, 9e9, 0)
-        fly.Parent = LP.Character.HumanoidRootPart
-    elseif LP.Character and LP.Character.HumanoidRootPart:FindFirstChild("HalloweenFly") then
-        LP.Character.HumanoidRootPart.HalloweenFly:Destroy()
-    end
-    
-    -- Speed
-    if Settings.Movement.Speed and LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 30
-    elseif LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 16
-    end
-    
-    -- Noclip
-    if Settings.Movement.Noclip and LP.Character then
-        for _, part in pairs(LP.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false
-            end
-        end
-    end
-end)
+-- 🎮 ИНТЕРФЕЙС NEO X HUB
 
--- 🎮 GUI ИНТЕРФЕЙС
-local VisualTab = Window:CreateTab("👻 ВИЗУАЛ HALLOWEEN", 1234567890)
-VisualTab:CreateToggle({Name = "🎃 ВКЛЮЧИТЬ ESP", CurrentValue = true, Flag = "ESPEnabled", Callback = function(v) Settings.ESP.Enabled = v end})
-VisualTab:CreateToggle({Name = "📦 BOX ESP", CurrentValue = true, Flag = "ESPBox", Callback = function(v) Settings.ESP.Box = v end})
-VisualTab:CreateToggle({Name = "👤 NAME ESP", CurrentValue = true, Flag = "ESPName", Callback = function(v) Settings.ESP.Name = v end})
-VisualTab:CreateToggle({Name = "❤️ HEALTH BAR", CurrentValue = true, Flag = "ESPHealth", Callback = function(v) Settings.ESP.Health = v end})
-VisualTab:CreateToggle({Name = "🦴 SKELETON ESP", CurrentValue = true, Flag = "ESPSkeleton", Callback = function(v) Settings.ESP.Skeleton = v end})
-VisualTab:CreateToggle({Name = "🎯 ROLE ESP", CurrentValue = true, Flag = "ESPRole", Callback = function(v) Settings.ESP.Role = v end})
-VisualTab:CreateToggle({Name = "📏 DISTANCE ESP", CurrentValue = true, Flag = "ESPDistance", Callback = function(v) Settings.ESP.Distance = v end})
-
-local ItemsTab = Window:CreateTab("🍬 ХЕЛЛОУИН ПРЕДМЕТЫ", 1234567891)
-ItemsTab:CreateToggle({Name = "🔫 GUN ESP", CurrentValue = true, Flag = "GunESP", Callback = function(v) Settings.Visuals.GunESP = v end})
-ItemsTab:CreateToggle({Name = "🪙 COIN ESP", CurrentValue = true, Flag = "CoinESP", Callback = function(v) Settings.Visuals.CoinESP = v end})
-ItemsTab:CreateToggle({Name = "🍬 CANDY ESP", CurrentValue = true, Flag = "CandyESP", Callback = function(v) Settings.Visuals.CandyESP = v end})
-ItemsTab:CreateToggle({Name = "🎃 PUMPKIN ESP", CurrentValue = true, Flag = "PumpkinESP", Callback = function(v) Settings.Visuals.PumpkinESP = v end})
-
-local MovementTab = Window:CreateTab("🚀 ДВИЖЕНИЕ", 1234567892)
-MovementTab:CreateToggle({Name = "👻 FLY", CurrentValue = false, Flag = "Fly", Callback = function(v) Settings.Movement.Fly = v end})
-MovementTab:CreateToggle({Name = "💨 SPEED", CurrentValue = false, Flag = "Speed", Callback = function(v) Settings.Movement.Speed = v end})
-MovementTab:CreateToggle({Name = "🏃 NOCLIP", CurrentValue = false, Flag = "Noclip", Callback = function(v) Settings.Movement.Noclip = v end})
-MovementTab:CreateToggle({Name = "🦘 SUPER JUMP", CurrentValue = false, Flag = "SuperJump", Callback = function(v) 
-    Settings.Movement.SuperJump = v 
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.JumpPower = v and 100 or 50
-    end
+-- 👁️ ВКЛАДКА ВИЗУАЛ
+local VisualTab = Window:CreateTab("👁️ ВИЗУАЛ", 1234567890)
+VisualTab:CreateToggle({Name = "🌈 ВКЛЮЧИТЬ ESP", CurrentValue = true, Flag = "ESP_Master", Callback = function(v) 
+   Neo.ESP.Enabled = v 
 end})
 
-local TeleportTab = Window:CreateTab("📍 ТЕЛЕПОРТ", 1234567893)
+VisualTab:CreateSection("📊 ESP НАСТРОЙКИ")
+VisualTab:CreateToggle({Name = "📦 BOX ESP", CurrentValue = true, Flag = "ESP_Box", Callback = function(v) Neo.ESP.Box = v end})
+VisualTab:CreateToggle({Name = "👤 NAME ESP", CurrentValue = true, Flag = "ESP_Name", Callback = function(v) Neo.ESP.Name = v end})
+VisualTab:CreateToggle({Name = "🎯 ROLE ESP", CurrentValue = true, Flag = "ESP_Role", Callback = function(v) Neo.ESP.Role = v end})
+VisualTab:CreateToggle({Name = "❤️ HEALTH BAR", CurrentValue = true, Flag = "ESP_Health", Callback = function(v) Neo.ESP.Health = v end})
+VisualTab:CreateToggle({Name = "📏 DISTANCE", CurrentValue = true, Flag = "ESP_Distance", Callback = function(v) Neo.ESP.Distance = v end})
+VisualTab:CreateToggle({Name = "📍 TRACER", CurrentValue = false, Flag = "ESP_Tracer", Callback = function(v) Neo.ESP.Tracer = v end})
+
+VisualTab:CreateSection("🎨 ВИЗУАЛЬНЫЕ ЭФФЕКТЫ")
+VisualTab:CreateToggle({Name = "🔫 GUN ESP", CurrentValue = true, Flag = "GunESP", Callback = function(v) 
+   Neo.Visuals.GunESP = v 
+   if v then
+       for _, obj in pairs(workspace:GetDescendants()) do
+           if obj.Name == "GunDrop" and not obj:FindFirstChild("NeoGunESP") then
+               local hl = Instance.new("Highlight")
+               hl.Name = "NeoGunESP"
+               hl.FillColor = Colors.Gun
+               hl.OutlineColor = Color3.new(1, 1, 0)
+               hl.FillTransparency = 0.3
+               hl.Parent = obj
+           end
+       end
+   else
+       for _, obj in pairs(workspace:GetDescendants()) do
+           if obj:FindFirstChild("NeoGunESP") then
+               obj.NeoGunESP:Destroy()
+           end
+       end
+   end
+end})
+
+VisualTab:CreateToggle({Name = "🪙 COIN ESP", CurrentValue = true, Flag = "CoinESP", Callback = function(v) 
+   Neo.Visuals.CoinESP = v 
+   if v then
+       for _, obj in pairs(workspace:GetDescendants()) do
+           if (obj.Name == "Coin" or obj.Name == "CoinDrop") and not obj:FindFirstChild("NeoCoinESP") then
+               local hl = Instance.new("Highlight")
+               hl.Name = "NeoCoinESP"
+               hl.FillColor = Colors.Coin
+               hl.OutlineColor = Color3.new(1, 0.5, 0)
+               hl.FillTransparency = 0.3
+               hl.Parent = obj
+           end
+       end
+   else
+       for _, obj in pairs(workspace:GetDescendants()) do
+           if obj:FindFirstChild("NeoCoinESP") then
+               obj.NeoCoinESP:Destroy()
+           end
+       end
+   end
+end})
+
+-- 🚀 ВКЛАДКА ДВИЖЕНИЕ
+local MovementTab = Window:CreateTab("🚀 ДВИЖЕНИЕ", 1234567891)
+MovementTab:CreateToggle({Name = "🦅 ПОЛЕТ", CurrentValue = false, Flag = "Fly", Callback = function(v) 
+   Neo.Movement.Fly = v 
+   Fly()
+end})
+
+MovementTab:CreateToggle({Name = "💨 СКОРОСТЬ", CurrentValue = false, Flag = "Speed", Callback = function(v) 
+   Neo.Movement.Speed = v 
+   Speed()
+end})
+
+MovementTab:CreateSlider({Name = "🚀 СКОРОСТЬ ХОДЬБЫ", Range = {16, 100}, Increment = 1, Suffix = "studs", CurrentValue = 30, Flag = "SpeedValue", Callback = function(v) 
+   Neo.Movement.SpeedValue = v 
+   Speed()
+end})
+
+MovementTab:CreateToggle({Name = "👻 NOCLIP", CurrentValue = false, Flag = "Noclip", Callback = function(v) 
+   Neo.Movement.Noclip = v 
+end})
+
+MovementTab:CreateToggle({Name = "🦘 БЕСКОНЕЧНЫЙ ПРЫЖОК", CurrentValue = false, Flag = "InfJump", Callback = function(v) 
+   Neo.Movement.InfJump = v 
+   if v then
+       UserInputService.JumpRequest:connect(function()
+           if Neo.Movement.InfJump then
+               LP.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+           end
+       end)
+   end
+end})
+
+-- ⚡ ВКЛАДКА АВТОМАТИЗАЦИЯ
+local AutoTab = Window:CreateTab("⚡ АВТОМАТИЗАЦИЯ", 1234567892)
+AutoTab:CreateToggle({Name = "💰 АВТО-ФАРМ МОНЕТ", CurrentValue = false, Flag = "AutoFarm", Callback = function(v) 
+   Neo.Automation.AutoFarm = v 
+end})
+
+AutoTab:CreateToggle({Name = "🏃 АВТО-УКЛОНЕНИЕ ОТ УБИЙЦЫ", CurrentValue = false, Flag = "AvoidMurderer", Callback = function(v) 
+   Neo.Automation.AvoidMurderer = v 
+end})
+
+AutoTab:CreateToggle({Name = "🔫 АВТО-ПОДБОР ПУШКИ", CurrentValue = false, Flag = "AutoGun", Callback = function(v) 
+   Neo.Automation.AutoGun = v 
+   if v then
+       for _, obj in pairs(workspace:GetDescendants()) do
+           if obj.Name == "GunDrop" then
+               LP.Character.HumanoidRootPart.CFrame = obj.CFrame
+               break
+           end
+       end
+   end
+end})
+
+-- ⚙️ ВКЛАДКА УТИЛИТЫ
+local UtilityTab = Window:CreateTab("⚙️ УТИЛИТЫ", 1234567893)
+UtilityTab:CreateToggle({Name = "🛡️ АНТИ-АФК", CurrentValue = true, Flag = "AntiAFK", Callback = function(v) 
+   Neo.Utility.AntiAFK = v 
+   if v then AntiAFK() end
+end})
+
+UtilityTab:CreateToggle({Name = "⏰ ТАЙМЕР РАУНДА", CurrentValue = true, Flag = "RoundTimer", Callback = function(v) 
+   Neo.Utility.RoundTimer = v 
+end})
+
+UtilityTab:CreateButton({Name = "🔃 ПЕРЕЗАЙТИ НА СЕРВЕР", Callback = function()
+   game:GetService("TeleportService"):Teleport(game.PlaceId)
+end})
+
+UtilityTab:CreateButton({Name = "🎯 ТЕЛЕПОРТ К ПУШКЕ", Callback = function()
+   for _, obj in pairs(workspace:GetDescendants()) do
+       if obj.Name == "GunDrop" then
+           LP.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+           break
+       end
+   end
+end})
+
+UtilityTab:CreateButton({Name = "🪙 ТЕЛЕПОРТ К МОНЕТЕ", Callback = function()
+   for _, obj in pairs(workspace:GetDescendants()) do
+       if obj.Name == "Coin" or obj.Name == "CoinDrop" then
+           LP.Character.HumanoidRootPart.CFrame = obj.CFrame + Vector3.new(0, 3, 0)
+           break
+       end
+   end
+end})
+
+-- 🎮 ТЕЛЕПОРТ К ИГРОКАМ
 local playerList = {}
 for _, player in pairs(Players:GetPlayers()) do
-    if player ~= LP then table.insert(playerList, player.Name) end
+   if player ~= LP then table.insert(playerList, player.Name) end
 end
 
-TeleportTab:CreateDropdown({Name = "ТЕЛЕПОРТ К ИГРОКУ", Options = playerList, Flag = "TPPlayer", Callback = TeleportToPlayer})
-TeleportTab:CreateButton({Name = "🔫 ТЕЛЕПОРТ К ПУШКЕ", Callback = TeleportToGun})
-TeleportTab:CreateButton({Name = "🍬 ТЕЛЕПОРТ К КОНФЕТЕ", Callback = TeleportToCandy})
-TeleportTab:CreateButton({Name = "🔄 ОБНОВИТЬ СПИСОК", Callback = function()
-    playerList = {}
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LP then table.insert(playerList, player.Name) end
-    end
+UtilityTab:CreateDropdown({Name = "🎯 ТЕЛЕПОРТ К ИГРОКУ", Options = playerList, CurrentOption = "", Flag = "TPPlayer", Callback = function(selected)
+   local target = Players:FindFirstChild(selected)
+   if target and target.Character then
+       LP.Character.HumanoidRootPart.CFrame = target.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+   end
 end})
 
--- 🎃 Инициализация
+-- 🔧 ВКЛАДКА НАСТРОЙКИ
+local SettingsTab = Window:CreateTab("🔧 НАСТРОЙКИ", 1234567894)
+SettingsTab:CreateButton({Name = "🔄 ОБНОВИТЬ ИНТЕРФЕЙС", Callback = function()
+   Rayfield:Notify({
+       Title = "Обновление",
+       Content = "Интерфейс обновлен!",
+       Duration = 3
+   })
+end})
+
+SettingsTab:CreateButton({Name = "🗑️ УДАЛИТЬ ИНТЕРФЕЙС", Callback = function()
+   Rayfield:Destroy()
+   for _, esp in pairs(ESP) do
+       for _, drawing in pairs(esp) do
+           drawing:Remove()
+       end
+   end
+end})
+
+SettingsTab:CreateLabel("Создано AI Assistant")
+SettingsTab:CreateLabel("Neo X Hub v1.0")
+
+-- 🔔 УВЕДОМЛЕНИЕ О ЗАПУСКЕ
+Rayfield:Notify({
+   Title = "🎮 NEO X HUB ЗАПУЩЕН",
+   Content = "Добро пожаловать в Neo X Hub!\nСоздано AI Assistant",
+   Duration = 6,
+   Image = 4483362458
+})
+
+-- 🔄 ОСНОВНОЙ ЦИКЛ
+RunService.Heartbeat:Connect(function()
+   -- ESP
+   UpdateESP()
+   
+   -- Движение
+   Fly()
+   Speed()
+   Noclip()
+   
+   -- Автоматизация
+   if Neo.Automation.AutoFarm then
+       AutoFarm()
+   end
+   
+   -- Уклонение от убийцы
+   if Neo.Automation.AvoidMurderer then
+       for _, player in pairs(Players:GetPlayers()) do
+           if player ~= LP and GetRole(player) == "Murderer" and player.Character then
+               local dist = (LP.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+               if dist < 20 then
+                   local dir = (LP.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Unit
+                   LP.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame + dir * 25
+               end
+           end
+       end
+   end
+end)
+
+-- 🎯 ИНИЦИАЛИЗАЦИЯ ESP
 for _, player in pairs(Players:GetPlayers()) do
-    if player ~= LP then CreateESP(player) end
+   if player ~= LP then CreateESP(player) end
 end
 
 Players.PlayerAdded:Connect(function(player)
-    player.CharacterAdded:Connect(function() 
-        wait(1)
-        CreateESP(player) 
-    end)
+   player.CharacterAdded:Connect(function()
+       wait(1)
+       CreateESP(player)
+   end)
 end)
 
 Players.PlayerRemoving:Connect(function(player)
-    if ESPObjects[player] then
-        for _, drawing in pairs(ESPObjects[player]) do
-            if type(drawing) == "table" then
-                for _, line in pairs(drawing) do
-                    if line then line:Remove() end
-                end
-            elseif drawing then
-                drawing:Remove()
-            end
-        end
-        ESPObjects[player] = nil
-    end
+   if ESP[player] then
+       for _, drawing in pairs(ESP[player]) do
+           drawing:Remove()
+       end
+       ESP[player] = nil
+   end
 end)
 
-Rayfield:Notify({
-    Title = "🎃 HALLOWEEN MM2 ULTIMATE",
-    Content = "Хеллоуинский чит успешно запущен!\nОбновлено для Halloween 2025",
-    Duration = 6,
-})
+-- 🛡️ ЗАПУСК АНТИ-АФК
+AntiAFK()
+
+print("🎮 Neo X Hub успешно загружен!")
+print("✨ Создано AI Assistant")
