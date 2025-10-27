@@ -1,16 +1,50 @@
--- ULTIMATE DEATH BALL CHEAT v2 - FIXED AUTO PARRY & ESP
+-- DEATH BALL ULTIMATE CHEAT SCRIPT v3 - COMPLETE HACK SUITE
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Window = Rayfield:CreateWindow({
-   Name = "🔥 DEATH BALL ULTIMATE CHEAT v2",
-   LoadingTitle = "Loading ENHANCED HACKS...",
+   Name = "🔥 DEATH BALL ULTIMATE CHEAT v3",
+   LoadingTitle = "Loading COMPLETE HACK SUITE...",
    LoadingSubtitle = "by PROFESSIONAL CHEATER",
-   ConfigurationSaving = {Enabled = true, FolderName = "DeathBallHack", FileName = "UltimateConfig"}
+   ConfigurationSaving = {Enabled = true, FolderName = "DeathBallHack", FileName = "CompleteConfig"}
 })
 
-getgenv().UltimateCheat = {
-    AutoFarm = false, AutoParry = false, AutoSpam = false, BallESP = false, PlayerESP = false,
-    SpeedHack = false, WalkSpeed = 100, InfiniteJump = false, NoClip = false, AutoClaimQuest = false,
-    AutoAbility = false, AutoWalk = false, ParryDistance = 15, PingCompensation = 0.05, GodMode = false
+-- ГЛОБАЛЬНЫЕ НАСТРОЙКИ
+getgenv().DeathBallHack = {
+    -- Боевые функции
+    AutoParry = false,
+    AutoSpam = false,
+    AutoFarm = false,
+    AutoAbility = false,
+    InstantKill = false,
+    
+    -- ESP функции
+    PlayerESP = false,
+    BallESP = false,
+    ESPLines = false,
+    ESPBoxes = false,
+    ESPDistance = false,
+    ESPNames = false,
+    
+    -- Визуальные улучшения
+    Tracers = false,
+    ShowDistance = false,
+    ShowHealth = false,
+    
+    -- Передвижение
+    SpeedHack = false,
+    WalkSpeed = 100,
+    InfiniteJump = false,
+    NoClip = false,
+    Fly = false,
+    FlySpeed = 50,
+    
+    -- Настройки
+    ParryDistance = 20,
+    PingCompensation = 0.1,
+    ESPRefresh = 0.1,
+    
+    -- Автоматизация
+    AutoClaimQuest = false,
+    AutoRejoin = false
 }
 
 local player = game.Players.LocalPlayer
@@ -19,26 +53,53 @@ local humanoid = character:WaitForChild("Humanoid")
 local root = character:WaitForChild("HumanoidRootPart")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 
--- Улучшенный поиск мячей
-local function getBallsUltimate()
+-- ФУНКЦИИ ПОИСКА ОБЪЕКТОВ
+local function getDeathBall()
     local balls = {}
     for _, obj in ipairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (string.find(obj.Name:lower(), "ball") or obj.Shape == Enum.PartType.Ball) then
+        if obj:IsA("BasePart") and (string.find(obj.Name:lower(), "ball") or 
+           obj.Name == "DeathBall" or obj.Shape == Enum.PartType.Ball) then
             table.insert(balls, obj)
         end
     end
     return balls
 end
 
--- FIXED AUTO PARRY - УЛЬТРА АГРЕССИВНЫЙ
-local lastParryTime = 0
-local parryCooldown = 0.2
+local function getAllPlayers()
+    local players = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+            table.insert(players, plr.Character)
+        end
+    end
+    return players
+end
 
+-- ПОИСК REMOTE EVENTS ДЛЯ DEATH BALL
+local function findDeathBallRemotes()
+    local remotes = {}
+    local remoteNames = {"Throw", "Shoot", "Fire", "Attack", "Parry", "Block", "Deflect", "Ability", "Skill", "Quest", "Claim"}
+    
+    for _, name in ipairs(remoteNames) do
+        for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and string.find(obj.Name:lower(), name:lower()) then
+                remotes[name] = obj
+            end
+        end
+    end
+    return remotes
+end
+
+local deathBallRemotes = findDeathBallRemotes()
+
+-- ULTIMATE AUTO PARRY ДЛЯ DEATH BALL
+local lastParryTime = 0
 spawn(function()
     RunService.Heartbeat:Connect(function()
-        if getgenv().UltimateCheat.AutoParry and character and root then
-            local balls = getBallsUltimate()
+        if getgenv().DeathBallHack.AutoParry then
+            local balls = getDeathBall()
             
             for _, ball in ipairs(balls) do
                 if ball and ball.Parent and ball.AssemblyLinearVelocity then
@@ -46,50 +107,49 @@ spawn(function()
                     local rootPos = root.Position
                     local distance = (ballPos - rootPos).Magnitude
                     local ballVel = ball.AssemblyLinearVelocity
+                    local ballSpeed = ballVel.Magnitude
                     
-                    -- ПРОСТОЙ И АГРЕССИВНЫЙ ПАРИРОВЩИК
-                    local isBallMoving = ballVel.Magnitude > 5
-                    local isClose = distance < getgenv().UltimateCheat.ParryDistance
-                    local isApproaching = ballVel:Dot((rootPos - ballPos).Unit) > 0
+                    -- АГРЕССИВНОЕ ПАРИРОВАНИЕ ДЛЯ DEATH BALL
+                    local isDangerous = ballSpeed > 10
+                    local isClose = distance < getgenv().DeathBallHack.ParryDistance
+                    local isComingAtMe = ballVel:Dot((rootPos - ballPos).Unit) > 0.3
                     
-                    -- УСИЛЕННЫЕ УСЛОВИЯ ДЛЯ АВТОПАРИРОВАНИЯ
-                    if isBallMoving and isClose and isApproaching and tick() - lastParryTime > parryCooldown then
+                    if isDangerous and isClose and isComingAtMe and tick() - lastParryTime > 0.15 then
                         
-                        -- СПАМ ПАРИРОВАНИЕМ НА ВСЕ СЛУЧАИ
-                        for i = 1, 3 do  -- Мульти-парирование для надежности
-                            -- Пробуем все возможные способы парирования
-                            
-                            -- 1. Через RemoteEvent
-                            local remotes = ReplicatedStorage:GetDescendants()
-                            for _, remote in ipairs(remotes) do
-                                if remote:IsA("RemoteEvent") and (
-                                    string.find(remote.Name:lower(), "parry") or
-                                    string.find(remote.Name:lower(), "block") or
-                                    string.find(remote.Name:lower(), "deflect") or
-                                    string.find(remote.Name:lower(), "counter")
-                                ) then
-                                    pcall(function() remote:FireServer() end)
-                                end
+                        -- МУЛЬТИ-ПАРИРОВАНИЕ ВСЕМИ СПОСОБАМИ
+                        for i = 1, 5 do
+                            -- Через RemoteEvents
+                            if deathBallRemotes["Parry"] then
+                                deathBallRemotes["Parry"]:FireServer()
+                            end
+                            if deathBallRemotes["Block"] then
+                                deathBallRemotes["Block"]:FireServer()
                             end
                             
-                            -- 2. Активация всех инструментов
+                            -- Через инструменты
                             for _, tool in ipairs(character:GetChildren()) do
                                 if tool:IsA("Tool") then
-                                    pcall(function() tool:Activate() end)
-                                    task.wait(0.01)
-                                    pcall(function() tool:Deactivate() end)
+                                    pcall(function()
+                                        tool:Activate()
+                                        task.wait(0.01)
+                                        tool:Deactivate()
+                                    end)
                                 end
                             end
                             
-                            -- 3. Спам клавишей (эмуляция нажатия)
-                            pcall(function() 
-                                virtualInput = game:GetService("VirtualInputManager")
+                            -- Эмуляция клавиш
+                            pcall(function()
+                                local virtualInput = game:GetService("VirtualInputManager")
                                 virtualInput:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                                virtualInput:SendKeyEvent(true, Enum.KeyCode.Q, false, game)
+                                virtualInput:SendKeyEvent(true, Enum.KeyCode.F, false, game)
                                 task.wait(0.01)
                                 virtualInput:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                                virtualInput:SendKeyEvent(false, Enum.KeyCode.Q, false, game)
+                                virtualInput:SendKeyEvent(false, Enum.KeyCode.F, false, game)
                             end)
                             
-                            task.wait(0.05)
+                            task.wait(0.03)
                         end
                         
                         lastParryTime = tick()
@@ -101,165 +161,586 @@ spawn(function()
     end)
 end)
 
--- УЛУЧШЕННЫЙ BALL ESP С ВИЗУАЛЬНЫМИ ЭФФЕКТАМИ
-local ballHighlights = {}
-local ballTrails = {}
-
+-- HYPER AUTO SPAM ДЛЯ DEATH BALL
 spawn(function()
-    RunService.Heartbeat:Connect(function()
-        -- Очистка старых объектов
-        for ball, objects in pairs(ballHighlights) do
-            if not ball or not ball.Parent then
-                if objects.highlight then objects.highlight:Destroy() end
-                if objects.billboard then objects.billboard:Destroy() end
-                if objects.beam then objects.beam:Destroy() end
-                ballHighlights[ball] = nil
-            end
-        end
-        
-        if getgenv().UltimateCheat.BallESP then
-            local balls = getBallsUltimate()
-            
-            for _, ball in ipairs(balls) do
-                if ball and ball.Parent then
-                    if not ballHighlights[ball] then
-                        -- Создаем все визуальные эффекты
-                        local highlight = Instance.new("Highlight")
-                        highlight.Adornee = ball
-                        highlight.FillColor = Color3.fromRGB(255, 0, 0)  -- Красный
-                        highlight.OutlineColor = Color3.fromRGB(255, 255, 0) -- Желтая обводка
-                        highlight.FillTransparency = 0.2  -- Меньше прозрачности
-                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                        highlight.Parent = workspace
-                        
-                        -- Биллборд с информацией
-                        local billboard = Instance.new("BillboardGui")
-                        billboard.Adornee = ball
-                        billboard.Size = UDim2.new(0, 120, 0, 50)
-                        billboard.StudsOffset = Vector3.new(0, 4, 0)
-                        billboard.AlwaysOnTop = true
-                        billboard.MaxDistance = 500
-                        
-                        local label = Instance.new("TextLabel")
-                        label.Size = UDim2.new(1, 0, 1, 0)
-                        label.BackgroundTransparency = 1
-                        label.Text = "🎯 BALL\n" .. math.floor((ball.Position - root.Position).Magnitude) .. " studs"
-                        label.TextColor3 = Color3.new(1, 1, 0)
-                        label.TextStrokeColor3 = Color3.new(0, 0, 0)
-                        label.TextStrokeTransparency = 0
-                        label.TextScaled = true
-                        label.Font = Enum.Font.GothamBold
-                        label.Parent = billboard
-                        billboard.Parent = ball
-                        
-                        -- Луч к мячу
-                        local beam = Instance.new("Beam")
-                        beam.Attachment0 = Instance.new("Attachment")
-                        beam.Attachment0.Parent = root
-                        beam.Attachment1 = Instance.new("Attachment")
-                        beam.Attachment1.Parent = ball
-                        beam.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0))
-                        beam.Width0 = 0.5
-                        beam.Width1 = 0.5
-                        beam.FaceCamera = true
-                        beam.Parent = workspace
-                        
-                        ballHighlights[ball] = {
-                            highlight = highlight,
-                            billboard = billboard,
-                            beam = beam
-                        }
-                    else
-                        -- Обновляем дистанцию
-                        if ballHighlights[ball].billboard then
-                            local label = ballHighlights[ball].billboard:FindFirstChildWhichIsA("TextLabel")
-                            if label then
-                                label.Text = "🎯 BALL\n" .. math.floor((ball.Position - root.Position).Magnitude) .. " studs"
-                                
-                                -- Меняем цвет в зависимости от расстояния
-                                local dist = (ball.Position - root.Position).Magnitude
-                                if dist < 10 then
-                                    label.TextColor3 = Color3.new(1, 0, 0)  -- Красный (близко)
-                                    if ballHighlights[ball].highlight then
-                                        ballHighlights[ball].highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                                    end
-                                elseif dist < 25 then
-                                    label.TextColor3 = Color3.new(1, 1, 0)  -- Желтый (средне)
-                                    if ballHighlights[ball].highlight then
-                                        ballHighlights[ball].highlight.FillColor = Color3.fromRGB(255, 255, 0)
-                                    end
-                                else
-                                    label.TextColor3 = Color3.new(0, 1, 0)  -- Зеленый (далеко)
-                                    if ballHighlights[ball].highlight then
-                                        ballHighlights[ball].highlight.FillColor = Color3.fromRGB(0, 255, 0)
-                                    end
-                                end
-                            end
-                        end
+    while true do
+        task.wait(0.06) -- СУПЕР БЫСТРЫЙ СПАМ
+        if getgenv().DeathBallHack.AutoSpam then
+            -- СПАМ ВСЕМИ REMOTE EVENTS ОДНОВРЕМЕННО
+            for name, remote in pairs(deathBallRemotes) do
+                if name ~= "Quest" and name ~= "Claim" then
+                    for i = 1, 2 do
+                        pcall(function() remote:FireServer() end)
                     end
                 end
             end
-        else
-            -- Полная очистка при отключении
-            for ball, objects in pairs(ballHighlights) do
-                if objects.highlight then objects.highlight:Destroy() end
-                if objects.billboard then objects.billboard:Destroy() end
-                if objects.beam then objects.beam:Destroy() end
+            
+            -- СПАМ ИНСТРУМЕНТАМИ
+            for _, tool in ipairs(character:GetChildren()) do
+                if tool:IsA("Tool") then
+                    pcall(function()
+                        tool:Activate()
+                        task.wait(0.01)
+                        tool:Deactivate()
+                    end)
+                end
             end
-            ballHighlights = {}
+        end
+    end
+end)
+
+-- COMPLETE ESP SYSTEM ДЛЯ DEATH BALL
+local espFolder = Instance.new("Folder")
+espFolder.Name = "DeathBallESP"
+espFolder.Parent = workspace
+
+local playerESP = {}
+local ballESP = {}
+local tracerConnections = {}
+
+-- ESP ДЛЯ ИГРОКОВ
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        -- Очистка старых ESP
+        for _, esp in pairs(playerESP) do
+            if esp.box then esp.box:Destroy() end
+            if esp.name then esp.name:Destroy() end
+            if esp.distance then esp.distance:Destroy() end
+            if esp.health then esp.health:Destroy() end
+            if esp.tracer then esp.tracer:Destroy() end
+        end
+        playerESP = {}
+        
+        if getgenv().DeathBallHack.PlayerESP then
+            local players = getAllPlayers()
+            
+            for _, enemy in ipairs(players) do
+                if enemy and enemy.Parent and enemy:FindFirstChild("HumanoidRootPart") then
+                    local enemyRoot = enemy.HumanoidRootPart
+                    local enemyHumanoid = enemy:FindFirstChild("Humanoid")
+                    
+                    -- BOX ESP
+                    if getgenv().DeathBallHack.ESPBoxes then
+                        local box = Instance.new("BoxHandleAdornment")
+                        box.Adornee = enemyRoot
+                        box.Size = enemyRoot.Size + Vector3.new(0.5, 0.5, 0.5)
+                        box.Color3 = Color3.fromRGB(255, 0, 0)
+                        box.Transparency = 0.3
+                        box.AlwaysOnTop = true
+                        box.ZIndex = 10
+                        box.Parent = espFolder
+                        playerESP[enemy] = playerESP[enemy] or {}
+                        playerESP[enemy].box = box
+                    end
+                    
+                    -- NAME ESP
+                    if getgenv().DeathBallHack.ESPNames then
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Adornee = enemyRoot
+                        billboard.Size = UDim2.new(0, 200, 0, 50)
+                        billboard.StudsOffset = Vector3.new(0, 3, 0)
+                        billboard.AlwaysOnTop = true
+                        billboard.MaxDistance = 1000
+                        
+                        local nameLabel = Instance.new("TextLabel")
+                        nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
+                        nameLabel.BackgroundTransparency = 1
+                        nameLabel.Text = enemy.Parent.Name
+                        nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        nameLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                        nameLabel.TextStrokeTransparency = 0
+                        nameLabel.TextScaled = true
+                        nameLabel.Font = Enum.Font.GothamBold
+                        nameLabel.Parent = billboard
+                        
+                        billboard.Parent = espFolder
+                        playerESP[enemy] = playerESP[enemy] or {}
+                        playerESP[enemy].name = billboard
+                    end
+                    
+                    -- DISTANCE ESP
+                    if getgenv().DeathBallHack.ESPDistance then
+                        local distance = (enemyRoot.Position - root.Position).Magnitude
+                        
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Adornee = enemyRoot
+                        billboard.Size = UDim2.new(0, 150, 0, 30)
+                        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+                        billboard.AlwaysOnTop = true
+                        
+                        local distanceLabel = Instance.new("TextLabel")
+                        distanceLabel.Size = UDim2.new(1, 0, 1, 0)
+                        distanceLabel.BackgroundTransparency = 1
+                        distanceLabel.Text = math.floor(distance) .. " studs"
+                        distanceLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
+                        distanceLabel.TextStrokeTransparency = 0
+                        distanceLabel.TextScaled = true
+                        distanceLabel.Parent = billboard
+                        
+                        billboard.Parent = espFolder
+                        playerESP[enemy] = playerESP[enemy] or {}
+                        playerESP[enemy].distance = billboard
+                    end
+                    
+                    -- HEALTH ESP
+                    if getgenv().DeathBallHack.ShowHealth and enemyHumanoid then
+                        local billboard = Instance.new("BillboardGui")
+                        billboard.Adornee = enemyRoot
+                        billboard.Size = UDim2.new(0, 120, 0, 25)
+                        billboard.StudsOffset = Vector3.new(0, 2, 0)
+                        billboard.AlwaysOnTop = true
+                        
+                        local healthLabel = Instance.new("TextLabel")
+                        healthLabel.Size = UDim2.new(1, 0, 1, 0)
+                        healthLabel.BackgroundTransparency = 1
+                        healthLabel.Text = "HP: " .. math.floor(enemyHumanoid.Health)
+                        healthLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+                        healthLabel.TextStrokeTransparency = 0
+                        healthLabel.TextScaled = true
+                        healthLabel.Parent = billboard
+                        
+                        billboard.Parent = espFolder
+                        playerESP[enemy] = playerESP[enemy] or {}
+                        playerESP[enemy].health = billboard
+                    end
+                    
+                    -- TRACER LINES
+                    if getgenv().DeathBallHack.ESPLines then
+                        local tracer = Instance.new("Beam")
+                        tracer.Attachment0 = Instance.new("Attachment")
+                        tracer.Attachment0.Parent = root
+                        tracer.Attachment1 = Instance.new("Attachment")
+                        tracer.Attachment1.Parent = enemyRoot
+                        
+                        -- Цвет трассера в зависимости от расстояния
+                        local dist = (enemyRoot.Position - root.Position).Magnitude
+                        if dist < 20 then
+                            tracer.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0)) -- Красный (близко)
+                        elseif dist < 50 then
+                            tracer.Color = ColorSequence.new(Color3.fromRGB(255, 255, 0)) -- Желтый (средне)
+                        else
+                            tracer.Color = ColorSequence.new(Color3.fromRGB(0, 255, 0)) -- Зеленый (далеко)
+                        end
+                        
+                        tracer.Width0 = 0.2
+                        tracer.Width1 = 0.2
+                        tracer.FaceCamera = true
+                        tracer.Parent = espFolder
+                        
+                        playerESP[enemy] = playerESP[enemy] or {}
+                        playerESP[enemy].tracer = tracer
+                    end
+                end
+            end
         end
     end)
 end)
 
--- Остальной код (Auto Farm, Speed Hack, etc.) остается таким же...
+-- ESP ДЛЯ МЯЧА
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        -- Очистка ESP мяча
+        for _, esp in pairs(ballESP) do
+            if esp.highlight then esp.highlight:Destroy() end
+            if esp.billboard then esp.billboard:Destroy() end
+            if esp.tracer then esp.tracer:Destroy() end
+        end
+        ballESP = {}
+        
+        if getgenv().DeathBallHack.BallESP then
+            local balls = getDeathBall()
+            
+            for _, ball in ipairs(balls) do
+                if ball and ball.Parent then
+                    -- HIGHLIGHT
+                    local highlight = Instance.new("Highlight")
+                    highlight.Adornee = ball
+                    highlight.FillColor = Color3.fromRGB(255, 255, 0) -- Ярко-желтый
+                    highlight.OutlineColor = Color3.fromRGB(255, 0, 0) -- Красная обводка
+                    highlight.FillTransparency = 0.1
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    highlight.Parent = espFolder
+                    
+                    -- BILLBOARD С ИНФОРМАЦИЕЙ
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Adornee = ball
+                    billboard.Size = UDim2.new(0, 200, 0, 80)
+                    billboard.StudsOffset = Vector3.new(0, 4, 0)
+                    billboard.AlwaysOnTop = true
+                    billboard.MaxDistance = 2000
+                    
+                    local distanceText = math.floor((ball.Position - root.Position).Magnitude)
+                    local speedText = math.floor(ball.AssemblyLinearVelocity.Magnitude)
+                    
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.Text = "🎯 DEATH BALL\n" .. distanceText .. " studs\n" .. speedText .. " speed"
+                    label.TextColor3 = Color3.fromRGB(255, 255, 0)
+                    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+                    label.TextStrokeTransparency = 0
+                    label.TextScaled = true
+                    label.Font = Enum.Font.GothamBold
+                    label.Parent = billboard
+                    billboard.Parent = espFolder
+                    
+                    -- TRACER К МЯЧУ
+                    if getgenv().DeathBallHack.Tracers then
+                        local tracer = Instance.new("Beam")
+                        tracer.Attachment0 = Instance.new("Attachment")
+                        tracer.Attachment0.Parent = root
+                        tracer.Attachment1 = Instance.new("Attachment")
+                        tracer.Attachment1.Parent = ball
+                        tracer.Color = ColorSequence.new(Color3.fromRGB(255, 255, 0))
+                        tracer.Width0 = 0.3
+                        tracer.Width1 = 0.3
+                        tracer.FaceCamera = true
+                        tracer.Parent = espFolder
+                        
+                        ballESP[ball] = {highlight = highlight, billboard = billboard, tracer = tracer}
+                    else
+                        ballESP[ball] = {highlight = highlight, billboard = billboard}
+                    end
+                end
+            end
+        end
+    end)
+end)
 
--- Создание интерфейса
-local MainTab = Window:CreateTab("MAIN HACKS", nil)
+-- ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ДЛЯ DEATH BALL
+-- Auto Farm
+spawn(function()
+    while true do
+        task.wait(0.2)
+        if getgenv().DeathBallHack.AutoFarm then
+            local players = getAllPlayers()
+            if #players > 0 then
+                local target = players[1]
+                if target:FindFirstChild("HumanoidRootPart") then
+                    -- Телепортация к цели
+                    root.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                    -- Авто-атака
+                    if deathBallRemotes["Throw"] then
+                        for i = 1, 3 do
+                            deathBallRemotes["Throw"]:FireServer()
+                            task.wait(0.1)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- Speed Hack
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        if getgenv().DeathBallHack.SpeedHack and humanoid then
+            humanoid.WalkSpeed = getgenv().DeathBallHack.WalkSpeed
+        elseif humanoid then
+            humanoid.WalkSpeed = 16
+        end
+    end)
+end)
+
+-- Infinite Jump
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if getgenv().DeathBallHack.InfiniteJump and humanoid then
+        humanoid:ChangeState("Jumping")
+    end
+end)
+
+-- NoClip
+spawn(function()
+    RunService.Stepped:Connect(function()
+        if getgenv().DeathBallHack.NoClip and character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end)
+
+-- Fly
+local flying = false
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        if getgenv().DeathBallHack.Fly and character then
+            flying = true
+            humanoid.PlatformStand = true
+            local vel = Instance.new("BodyVelocity")
+            vel.Velocity = Vector3.new(0, 0, 0)
+            vel.MaxForce = Vector3.new(40000, 40000, 40000)
+            vel.Parent = root
+            
+            local function fly()
+                local cam = workspace.CurrentCamera
+                local move = {
+                    Forward = false,
+                    Backward = false,
+                    Left = false,
+                    Right = false,
+                    Up = false,
+                    Down = false
+                }
+                
+                local connection
+                connection = game:GetService("UserInputService").InputBegan:Connect(function(input)
+                    if input.KeyCode == Enum.KeyCode.W then move.Forward = true end
+                    if input.KeyCode == Enum.KeyCode.S then move.Backward = true end
+                    if input.KeyCode == Enum.KeyCode.A then move.Left = true end
+                    if input.KeyCode == Enum.KeyCode.D then move.Right = true end
+                    if input.KeyCode == Enum.KeyCode.Space then move.Up = true end
+                    if input.KeyCode == Enum.KeyCode.LeftShift then move.Down = true end
+                end)
+                
+                game:GetService("UserInputService").InputEnded:Connect(function(input)
+                    if input.KeyCode == Enum.KeyCode.W then move.Forward = false end
+                    if input.KeyCode == Enum.KeyCode.S then move.Backward = false end
+                    if input.KeyCode == Enum.KeyCode.A then move.Left = false end
+                    if input.KeyCode == Enum.KeyCode.D then move.Right = false end
+                    if input.KeyCode == Enum.KeyCode.Space then move.Up = false end
+                    if input.KeyCode == Enum.KeyCode.LeftShift then move.Down = false end
+                end)
+                
+                while flying do
+                    task.wait()
+                    local direction = Vector3.new(0, 0, 0)
+                    if move.Forward then direction = direction + cam.CFrame.LookVector end
+                    if move.Backward then direction = direction - cam.CFrame.LookVector end
+                    if move.Left then direction = direction - cam.CFrame.RightVector end
+                    if move.Right then direction = direction + cam.CFrame.RightVector end
+                    if move.Up then direction = direction + Vector3.new(0, 1, 0) end
+                    if move.Down then direction = direction + Vector3.new(0, -1, 0) end
+                    
+                    if direction.Magnitude > 0 then
+                        direction = direction.Unit * getgenv().DeathBallHack.FlySpeed
+                    end
+                    
+                    vel.Velocity = direction
+                end
+                
+                connection:Disconnect()
+            end
+            
+            fly()
+        elseif flying then
+            flying = false
+            humanoid.PlatformStand = false
+            for _, v in ipairs(root:GetChildren()) do
+                if v:IsA("BodyVelocity") then
+                    v:Destroy()
+                end
+            end
+        end
+    end)
+end)
+
+-- ИНТЕРФЕЙС
+local CombatTab = Window:CreateTab("COMBAT", nil)
 local VisualTab = Window:CreateTab("VISUALS", nil)
+local MovementTab = Window:CreateTab("MOVEMENT", nil)
+local AutoTab = Window:CreateTab("AUTOMATION", nil)
 
-MainTab:CreateToggle({
-    Name = "🛡️ ULTRA AUTO PARRY (FIXED)",
+-- COMBAT
+CombatTab:CreateToggle({
+    Name = "🛡️ ULTRA AUTO PARRY",
     CurrentValue = false,
     Flag = "AutoParryUltra",
     Callback = function(Value)
-        getgenv().UltimateCheat.AutoParry = Value
+        getgenv().DeathBallHack.AutoParry = Value
     end,
 })
 
-MainTab:CreateSlider({
+CombatTab:CreateToggle({
+    Name = "💥 HYPER AUTO SPAM",
+    CurrentValue = false,
+    Flag = "AutoSpamHyper",
+    Callback = function(Value)
+        getgenv().DeathBallHack.AutoSpam = Value
+    end,
+})
+
+CombatTab:CreateToggle({
+    Name = "🏴‍☠️ AUTO FARM",
+    CurrentValue = false,
+    Flag = "AutoFarm",
+    Callback = function(Value)
+        getgenv().DeathBallHack.AutoFarm = Value
+    end,
+})
+
+CombatTab:CreateSlider({
     Name = "PARRY DISTANCE",
-    Range = {5, 30},
+    Range = {5, 50},
     Increment = 1,
     Suffix = "Studs",
-    CurrentValue = 15,
+    CurrentValue = 20,
     Flag = "ParryDistance",
     Callback = function(Value)
-        getgenv().UltimateCheat.ParryDistance = Value
+        getgenv().DeathBallHack.ParryDistance = Value
     end,
 })
 
-VisualTab:CreateToggle({
-    Name = "🎯 ENHANCED BALL ESP",
-    CurrentValue = false,
-    Flag = "BallESPEnhanced",
-    Callback = function(Value)
-        getgenv().UltimateCheat.BallESP = Value
-    end,
-})
-
+-- VISUALS
 VisualTab:CreateToggle({
     Name = "👁️ PLAYER ESP",
     CurrentValue = false,
     Flag = "PlayerESP",
     Callback = function(Value)
-        getgenv().UltimateCheat.PlayerESP = Value
+        getgenv().DeathBallHack.PlayerESP = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "🎯 BALL ESP",
+    CurrentValue = false,
+    Flag = "BallESP",
+    Callback = function(Value)
+        getgenv().DeathBallHack.BallESP = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "📏 ESP LINES",
+    CurrentValue = false,
+    Flag = "ESPLines",
+    Callback = function(Value)
+        getgenv().DeathBallHack.ESPLines = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "🟦 ESP BOXES",
+    CurrentValue = false,
+    Flag = "ESPBoxes",
+    Callback = function(Value)
+        getgenv().DeathBallHack.ESPBoxes = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "📐 ESP DISTANCE",
+    CurrentValue = false,
+    Flag = "ESPDistance",
+    Callback = function(Value)
+        getgenv().DeathBallHack.ESPDistance = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "🔤 ESP NAMES",
+    CurrentValue = false,
+    Flag = "ESPNames",
+    Callback = function(Value)
+        getgenv().DeathBallHack.ESPNames = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "❤️ SHOW HEALTH",
+    CurrentValue = false,
+    Flag = "ShowHealth",
+    Callback = function(Value)
+        getgenv().DeathBallHack.ShowHealth = Value
+    end,
+})
+
+-- MOVEMENT
+MovementTab:CreateToggle({
+    Name = "🚀 SPEED HACK",
+    CurrentValue = false,
+    Flag = "SpeedHack",
+    Callback = function(Value)
+        getgenv().DeathBallHack.SpeedHack = Value
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "WALK SPEED",
+    Range = {16, 300},
+    Increment = 5,
+    Suffix = "Speed",
+    CurrentValue = 100,
+    Flag = "WalkSpeed",
+    Callback = function(Value)
+        getgenv().DeathBallHack.WalkSpeed = Value
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "🪽 FLY MODE",
+    CurrentValue = false,
+    Flag = "FlyMode",
+    Callback = function(Value)
+        getgenv().DeathBallHack.Fly = Value
+    end,
+})
+
+MovementTab:CreateSlider({
+    Name = "FLY SPEED",
+    Range = {10, 200},
+    Increment = 5,
+    Suffix = "Speed",
+    CurrentValue = 50,
+    Flag = "FlySpeed",
+    Callback = function(Value)
+        getgenv().DeathBallHack.FlySpeed = Value
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "∞ INFINITE JUMP",
+    CurrentValue = false,
+    Flag = "InfiniteJump",
+    Callback = function(Value)
+        getgenv().DeathBallHack.InfiniteJump = Value
+    end,
+})
+
+MovementTab:CreateToggle({
+    Name = "👻 NO CLIP",
+    CurrentValue = false,
+    Flag = "NoClip",
+    Callback = function(Value)
+        getgenv().DeathBallHack.NoClip = Value
+    end,
+})
+
+-- AUTOMATION
+AutoTab:CreateToggle({
+    Name = "⚡ AUTO ABILITY",
+    CurrentValue = false,
+    Flag = "AutoAbility",
+    Callback = function(Value)
+        getgenv().DeathBallHack.AutoAbility = Value
+    end,
+})
+
+AutoTab:CreateToggle({
+    Name = "🎁 AUTO CLAIM QUEST",
+    CurrentValue = false,
+    Flag = "AutoClaimQuest",
+    Callback = function(Value)
+        getgenv().DeathBallHack.AutoClaimQuest = Value
+    end,
+})
+
+AutoTab:CreateButton({
+    Name = "💀 DESTROY GUI",
+    Callback = function()
+        Rayfield:Destroy()
+        espFolder:Destroy()
     end,
 })
 
 Rayfield:Notify({
-    Title = "🔥 ENHANCED CHEAT LOADED",
-    Content = "AUTO PARRY FIXED! BALL ESP ENHANCED!",
-    Duration = 6,
+    Title = "🔥 DEATH BALL ULTIMATE CHEAT LOADED",
+    Content = "COMPLETE HACK SUITE ACTIVATED! DOMINATE THE GAME!",
+    Duration = 8,
+    Image = nil
 })
 
-print("🎮 ENHANCED DEATH BALL CHEAT ACTIVATED - AUTO PARRY FIXED!")
+print("🎮 DEATH BALL ULTIMATE CHEAT v3 ACTIVATED - COMPLETE DOMINATION!")
