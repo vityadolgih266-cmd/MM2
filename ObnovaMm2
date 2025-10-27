@@ -1,698 +1,481 @@
--- EVADE DOMINATOR — единый встроенный интерфейс (без резерва), улучшенные функции и "крутой" ESP
--- Цель: сразу отображать GUI с вкладками, улучшенным ESP и надёжным авто-возрождением + авто-экипировка "бомбы" после кокна.
--- Инструкции: поместите содержимое этого файла как исполняемый скрипт в ваш исполнител/инжектор. Скрипт НЕ требует внешних библиотек.
+-- Death Ball ULTIMATE CHEAT SCRIPT
+-- Полный перезаписи для максимального читерства
 
--- ========== НАСТРОЙКИ И ГЛОБАЛЫ ==========
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local Debris = game:GetService("Debris")
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Window = Rayfield:CreateWindow({
+   Name = "🔥 DEATH BALL ULTIMATE CHEAT",
+   LoadingTitle = "Loading HACKS...",
+   LoadingSubtitle = "by PROFESSIONAL CHEATER",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "DeathBallHack",
+      FileName = "UltimateConfig"
+   }
+})
+
+-- Глобальные переменные
+getgenv().UltimateCheat = {
+    AutoFarm = false,
+    AutoParry = false,
+    AutoSpam = false,
+    BallESP = false,
+    PlayerESP = false,
+    SpeedHack = false,
+    WalkSpeed = 100,
+    InfiniteJump = false,
+    NoClip = false,
+    AutoClaimQuest = false,
+    AutoAbility = false,
+    AutoWalk = false,
+    ParryDistance = 30,
+    PingCompensation = 0.05,
+    GodMode = false,
+    InstantKill = false,
+    NoCooldown = false
+}
+
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local root = character:WaitForChild("HumanoidRootPart")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterGui = game:GetService("StarterGui")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
--- Флаги и значения
-local Flags = {
-    SpeedActive = false,
-    JumpActive = false,
-    NoclipActive = false,
-    AutoReviveActive = false,
-    ESPActive = false,
-    FullBright = false,
-    AntiAFK = false,
-}
-
-local Values = {
-    SpeedValue = 50,
-    JumpValue = 100,
-}
-
--- Возможные имена "бомбы" — можно расширить под ваш сервер
-local POSSIBLE_BOMB_NAMES = {"Bomb", "BombTool", "BombGun", "Bombs", "TNT", "Explosive"}
-
--- Последний инструмент/бомба, который был у игрока
-local LastToolName = nil
-
--- Утилиты
-local function safe_pcall(fn, ...)
-    local ok, res = pcall(fn, ...)
-    return ok, res
-end
-
-local function clamp(n, a, b)
-    return math.max(a, math.min(b, n))
-end
-
--- ========== UI: СВОЙ ОДНОФАЙЛОВЫЙ ТАБОВЫЙ ИНТЕРФЕЙС ==========
--- Создаём ScreenGui с вкладками (Main, ESP, Extra)
-local function CreateInterface()
-    -- Удаляем старый, если есть (чтобы перезапуск скрипта не дублировал)
-    local pg = LocalPlayer and LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    if not pg then
-        pg = LocalPlayer:WaitForChild("PlayerGui", 5) -- блокируем на короткое время
-        if not pg then
-            warn("PlayerGui не найден — UI не создан")
-            return
-        end
-    end
-    if pg:FindFirstChild("EvadeDominatorUI") then
-        pg:FindFirstChild("EvadeDominatorUI"):Destroy()
-    end
-
-    local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "EvadeDominatorUI"
-    screenGui.ResetOnSpawn = false
-    screenGui.Parent = pg
-
-    local mainFrame = Instance.new("Frame")
-    mainFrame.Name = "MainFrame"
-    mainFrame.Size = UDim2.new(0, 420, 0, 460)
-    mainFrame.Position = UDim2.new(0, 16, 0, 16)
-    mainFrame.BackgroundColor3 = Color3.fromRGB(24, 24, 24)
-    mainFrame.BorderSizePixel = 0
-    mainFrame.Parent = screenGui
-    mainFrame.Active = true
-    mainFrame.Draggable = true
-
-    local title = Instance.new("TextLabel", mainFrame)
-    title.Size = UDim2.new(1, 0, 0, 36)
-    title.Position = UDim2.new(0, 0, 0, 0)
-    title.BackgroundTransparency = 1
-    title.Text = "🔥 EVADE DOMINATOR"
-    title.TextColor3 = Color3.fromRGB(255, 200, 50)
-    title.Font = Enum.Font.GothamBold
-    title.TextSize = 20
-
-    -- Tabs buttons panel
-    local tabsPanel = Instance.new("Frame", mainFrame)
-    tabsPanel.Size = UDim2.new(1, 0, 0, 36)
-    tabsPanel.Position = UDim2.new(0, 0, 0, 36)
-    tabsPanel.BackgroundTransparency = 1
-
-    local function createTabButton(name, pos)
-        local b = Instance.new("TextButton", tabsPanel)
-        b.Size = UDim2.new(0, 120, 1, -4)
-        b.Position = UDim2.new(0, 8 + (pos-1)*126, 0, 2)
-        b.Text = name
-        b.Font = Enum.Font.Gotham
-        b.TextSize = 14
-        b.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-        b.BorderSizePixel = 0
-        b.TextColor3 = Color3.fromRGB(220,220,220)
-        return b
-    end
-
-    local tabMainBtn = createTabButton("ОСНОВНЫЕ", 1)
-    local tabEspBtn = createTabButton("ESP", 2)
-    local tabExtraBtn = createTabButton("ЭКСТРА", 3)
-
-    -- Content containers
-    local contentFrame = Instance.new("Frame", mainFrame)
-    contentFrame.Size = UDim2.new(1, -16, 1, -92)
-    contentFrame.Position = UDim2.new(0, 8, 0, 76)
-    contentFrame.BackgroundTransparency = 1
-
-    local function createPage(name)
-        local page = Instance.new("Frame", contentFrame)
-        page.Name = name
-        page.Size = UDim2.new(1, 0, 1, 0)
-        page.BackgroundTransparency = 1
-        page.Visible = false
-        return page
-    end
-
-    local pageMain = createPage("MainPage")
-    local pageESP = createPage("ESPPage")
-    local pageExtra = createPage("ExtraPage")
-
-    -- переключатель видимости страниц
-    local function showPage(page)
-        for _, v in pairs(contentFrame:GetChildren()) do
-            if v:IsA("Frame") then v.Visible = (v == page) end
-        end
-    end
-    showPage(pageMain)
-
-    tabMainBtn.MouseButton1Click:Connect(function() showPage(pageMain) end)
-    tabEspBtn.MouseButton1Click:Connect(function() showPage(pageESP) end)
-    tabExtraBtn.MouseButton1Click:Connect(function() showPage(pageExtra) end)
-
-    -- Вспомогательные функции для создания контролов
-    local function addToggle(parent, y, label, getSet)
-        local btn = Instance.new("TextButton", parent)
-        btn.Size = UDim2.new(1, 0, 0, 34)
-        btn.Position = UDim2.new(0, 0, 0, y)
-        btn.Text = label .. ": OFF"
-        btn.Font = Enum.Font.Gotham
-        btn.TextSize = 14
-        btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
-        btn.BorderSizePixel = 0
-        btn.TextColor3 = Color3.fromRGB(230,230,230)
-        btn.MouseButton1Click:Connect(function()
-            getSet.value = not getSet.value
-            btn.Text = label .. (getSet.value and ": ON" or ": OFF")
-        end)
-        return btn
-    end
-
-    local function addSlider(parent, y, label, min, max, step, ref)
-        local lab = Instance.new("TextLabel", parent)
-        lab.Size = UDim2.new(1, 0, 0, 20)
-        lab.Position = UDim2.new(0, 0, 0, y)
-        lab.BackgroundTransparency = 1
-        lab.Font = Enum.Font.Gotham
-        lab.TextSize = 13
-        lab.TextColor3 = Color3.fromRGB(220,220,220)
-        lab.Text = label .. " ("..min.."-"..max.."): " .. tostring(ref.value)
-        local slider = Instance.new("TextBox", parent)
-        slider.Size = UDim2.new(0, 120, 0, 28)
-        slider.Position = UDim2.new(0.5, -60, 0, y+22)
-        slider.PlaceholderText = tostring(ref.value)
-        slider.Text = ""
-        slider.BackgroundColor3 = Color3.fromRGB(55,55,55)
-        slider.TextColor3 = Color3.fromRGB(255,255,255)
-        slider.Font = Enum.Font.Gotham
-        slider.TextSize = 14
-        local apply = Instance.new("TextButton", parent)
-        apply.Size = UDim2.new(0, 80, 0, 28)
-        apply.Position = UDim2.new(0.5, 70, 0, y+22)
-        apply.Text = "Применить"
-        apply.Font = Enum.Font.Gotham
-        apply.TextSize = 13
-        apply.BackgroundColor3 = Color3.fromRGB(80,80,80)
-        apply.MouseButton1Click:Connect(function()
-            local v = tonumber(slider.Text) or tonumber(slider.PlaceholderText)
-            if v then
-                v = math.floor(v/step)*step
-                v = clamp(v, min, max)
-                ref.value = v
-                lab.Text = label .. " ("..min.."-"..max.."): " .. tostring(ref.value)
-            end
-        end)
-        return {label = lab, box = slider, apply = apply}
-    end
-
-    -- ========== Заполнение MainPage ==========
-    do
-        local y = 0
-        local speedRef = {value = Values.SpeedValue}
-        local jumpRef = {value = Values.JumpValue}
-        local t1 = addToggle(pageMain, y, "⚡ СКОРОСТЬ", {value = Flags.SpeedActive})
-        y = y + 40
-        local scontrols = addSlider(pageMain, y, "⚡ СКОРОСТЬ", 50, 500, 5, speedRef)
-        y = y + 70
-        local t2 = addToggle(pageMain, y, "🚀 СУПЕР-ПРЫЖОК", {value = Flags.JumpActive})
-        y = y + 40
-        local jcontrols = addSlider(pageMain, y, "🚀 ПРЫЖОК", 100, 1000, 5, jumpRef)
-        y = y + 70
-        local t3 = addToggle(pageMain, y, "✨ NOCLIP", {value = Flags.NoclipActive})
-        y = y + 40
-        local t4 = addToggle(pageMain, y, "💀 АВТО-ВОЗРОЖДЕНИЕ", {value = Flags.AutoReviveActive})
-        y = y + 40
-
-        -- Подключение обновлений к реальным глобалом
-        spawn(function()
-            while screenGui.Parent do
-                Flags.SpeedActive = t1.Text:match(": ON") and true or false
-                Flags.JumpActive = t2.Text:match(": ON") and true or false
-                Flags.NoclipActive = t3.Text:match(": ON") and true or false
-                Flags.AutoReviveActive = t4.Text:match(": ON") and true or false
-                -- применение значений из полей
-                Values.SpeedValue = speedRef.value
-                Values.JumpValue = jumpRef.value
-                task.wait(0.4)
-            end
-        end)
-    end
-
-    -- ========== Заполнение ESPPage ==========
-    do
-        local y = 0
-        local t = addToggle(pageESP, y, "🔥 ESP (Ники + HP + Дистанция)", {value = Flags.ESPActive})
-        y = y + 40
-
-        local btnBright = Instance.new("TextButton", pageESP)
-        btnBright.Size = UDim2.new(1, 0, 0, 34)
-        btnBright.Position = UDim2.new(0, 0, 0, y)
-        btnBright.Text = "🔴 Подсветить NEXTBOTS"
-        btnBright.Font = Enum.Font.Gotham
-        btnBright.TextSize = 14
-        btnBright.BackgroundColor3 = Color3.fromRGB(60,60,60)
-        btnBright.MouseButton1Click:Connect(function()
-            local nextbots = workspace:FindFirstChild("Nextbots")
-            if nextbots then
-                for _, nb in pairs(nextbots:GetChildren()) do
-                    if nb:IsA("Model") then
-                        local hl = Instance.new("Highlight")
-                        hl.Adornee = nb
-                        hl.FillColor = Color3.fromRGB(0, 120, 255)
-                        hl.OutlineColor = Color3.fromRGB(255, 255, 0)
-                        hl.FillTransparency = 0.6
-                        hl.Parent = nb
-                        Debris:AddItem(hl, 25)
-                    end
-                end
-            end
-        end)
-        y = y + 44
-
-        -- подсказка
-        local hint = Instance.new("TextLabel", pageESP)
-        hint.Size = UDim2.new(1, 0, 0, 44)
-        hint.Position = UDim2.new(0, 0, 0, y)
-        hint.Text = "ESP использует Highlight + BillboardGui (HP бар, дистанция). Работает плавно."
-        hint.TextWrapped = true
-        hint.BackgroundTransparency = 1
-        hint.Font = Enum.Font.Gotham
-        hint.TextSize = 12
-        hint.TextColor3 = Color3.fromRGB(200,200,200)
-    end
-
-    -- ========== Заполнение ExtraPage ==========
-    do
-        local y = 0
-        local btnFullBright = Instance.new("TextButton", pageExtra)
-        btnFullBright.Size = UDim2.new(1, 0, 0, 34)
-        btnFullBright.Position = UDim2.new(0, 0, 0, y)
-        btnFullBright.Text = "🔆 ПОЛНАЯ ЯРКОСТЬ"
-        btnFullBright.Font = Enum.Font.Gotham
-        btnFullBright.TextSize = 14
-        btnFullBright.BackgroundColor3 = Color3.fromRGB(60,60,60)
-        btnFullBright.MouseButton1Click:Connect(function()
-            Flags.FullBright = not Flags.FullBright
-            if Flags.FullBright then
-                pcall(function()
-                    game.Lighting.Brightness = 2
-                    game.Lighting.ClockTime = 14
-                    game.Lighting.FogEnd = 1e8
-                    game.Lighting.GlobalShadows = false
-                end)
-                btnFullBright.Text = "🔆 ПОЛНАЯ ЯРКОСТЬ: ON"
-            else
-                pcall(function()
-                    game.Lighting.Brightness = 1
-                    game.Lighting.ClockTime = 14
-                    game.Lighting.FogEnd = 1000
-                    game.Lighting.GlobalShadows = true
-                end)
-                btnFullBright.Text = "🔆 ПОЛНАЯ ЯРКОСТЬ"
-            end
-        end)
-        y = y + 44
-
-        local btnFPS = Instance.new("TextButton", pageExtra)
-        btnFPS.Size = UDim2.new(1, 0, 0, 34)
-        btnFPS.Position = UDim2.new(0, 0, 0, y)
-        btnFPS.Text = "🔄 УВЕЛИЧЕНИЕ FPS"
-        btnFPS.Font = Enum.Font.Gotham
-        btnFPS.TextSize = 14
-        btnFPS.BackgroundColor3 = Color3.fromRGB(60,60,60)
-        btnFPS.MouseButton1Click:Connect(function()
-            spawn(function()
-                for _, obj in pairs(workspace:GetDescendants()) do
-                    if obj:IsA("BasePart") then
-                        pcall(function() obj.Material = Enum.Material.SmoothPlastic end)
-                    end
-                end
-                pcall(function() settings().Rendering.QualityLevel = 1 end)
-            end)
-        end)
-        y = y + 44
-
-        local btnAntiAFK = Instance.new("TextButton", pageExtra)
-        btnAntiAFK.Size = UDim2.new(1, 0, 0, 34)
-        btnAntiAFK.Position = UDim2.new(0, 0, 0, y)
-        btnAntiAFK.Text = "🌀 АНТИ-АФК"
-        btnAntiAFK.Font = Enum.Font.Gotham
-        btnAntiAFK.TextSize = 14
-        btnAntiAFK.BackgroundColor3 = Color3.fromRGB(60,60,60)
-        local antiAFKThread = nil
-        btnAntiAFK.MouseButton1Click:Connect(function()
-            Flags.AntiAFK = not Flags.AntiAFK
-            if Flags.AntiAFK then
-                btnAntiAFK.Text = "🌀 АНТИ-АФК: ON"
-                antiAFKThread = spawn(function()
-                    local vu = game:GetService("VirtualUser")
-                    while Flags.AntiAFK do
-                        pcall(function()
-                            vu:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                            task.wait(1)
-                            vu:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
-                        end)
-                        task.wait(28 + math.random())
-                    end
-                end)
-            else
-                btnAntiAFK.Text = "🌀 АНТИ-АФК"
-            end
-        end)
-    end
-
-    return screenGui
-end
-
-local UIroot = CreateInterface()
-
--- ========== ФУНКЦИОНАЛ: ДВИЖЕНИЕ, НОКЛИП, АВТО-ВОЗРОЖДЕНИЕ, ESP ==========
--- Следим за экипировкой инструмента, чтобы знать "бомбу"
-local function TrackToolInCharacter(character)
-    if not character then return end
-    local function scan()
-        local tool = character:FindFirstChildOfClass("Tool")
-        if tool then LastToolName = tool.Name end
-    end
-    scan()
-    character.ChildAdded:Connect(function(c)
-        if c:IsA("Tool") then LastToolName = c.Name end
-    end)
-    character.ChildRemoved:Connect(function(c)
-        if c:IsA("Tool") and LastToolName == c.Name then
-            LastToolName = nil
-        end
-    end)
-end
-
-if LocalPlayer and LocalPlayer.Character then
-    TrackToolInCharacter(LocalPlayer.Character)
-end
-LocalPlayer.CharacterAdded:Connect(function(ch) 
-    task.wait(0.5) 
-    TrackToolInCharacter(ch) 
-end)
-
--- Применение модификаторов скорости/прыжка
-local function ApplyMovementModifiers(character)
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-    if Flags.SpeedActive then
-        pcall(function() humanoid.WalkSpeed = clamp(Values.SpeedValue, 16, 500) end)
-    else
-        pcall(function() humanoid.WalkSpeed = 16 end)
-    end
-    if Flags.JumpActive then
-        pcall(function()
-            humanoid.JumpPower = clamp(Values.JumpValue, 50, 1000)
-            humanoid.JumpHeight = clamp(Values.JumpValue, 50, 1000)
-        end)
-    else
-        pcall(function()
-            humanoid.JumpPower = 50
-            humanoid.JumpHeight = 50
-        end)
-    end
-end
-
--- RunService Heartbeat обновляет движения
-RunService.Heartbeat:Connect(function()
-    if LocalPlayer and LocalPlayer.Character then
-        ApplyMovementModifiers(LocalPlayer.Character)
-    end
-end)
-
--- Noclip (работает экономно)
-RunService.Stepped:Connect(function()
-    if Flags.NoclipActive and LocalPlayer and LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") then
-                pcall(function() part.CanCollide = false end)
-            end
-        end
-    end
-end)
-
--- ========== АВТО-ВОЗРОЖДЕНИЕ (мгновенно при кокне) ==========
--- Попытки позвать серверные ремоуты (агрессивно)
-local function TryServerRevive()
-    local tried = {}
-    local function try(obj)
-        if not obj or tried[obj] then return end
-        tried[obj] = true
-        pcall(function()
+-- УЛЬТИМАТИВНЫЙ поиск RemoteEvents
+local function findRemoteForce(names)
+    for _, name in ipairs(names) do
+        for _, obj in ipairs(ReplicatedStorage:GetDescendants()) do
             if obj:IsA("RemoteEvent") then
-                obj:FireServer()
-            elseif obj:IsA("RemoteFunction") then
-                obj:InvokeServer()
+                if string.find(obj.Name:lower(), name:lower()) then
+                    return obj
+                end
             end
-        end)
+        end
+        -- Расширенный поиск в других местах
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and string.find(obj.Name:lower(), name:lower()) then
+                return obj
+            end
+        end
     end
+    -- Если не нашли - создаем фейковый для обхода ошибок
+    return Instance.new("RemoteEvent")
+end
 
-    -- Перечислим распространённые места и имена
-    local places = {
-        workspace,
-        ReplicatedStorage,
-        ReplicatedStorage:FindFirstChild("Remotes") or nil,
-        ReplicatedStorage:FindFirstChild("Functions") or nil,
-    }
+local parryRemote = findRemoteForce({"parry", "block", "deflect", "counter"})
+local throwRemote = findRemoteForce({"throw", "shoot", "fire", "attack"})
+local abilityRemote = findRemoteForce({"ability", "skill", "power", "ult"})
+local claimRemote = findRemoteForce({"claim", "quest", "reward"})
 
-    local names = {"Revive", "ReviveRemote", "ReviveEvent", "Respawn", "RespawnRemote", "RespawnEvent", "GiveTool", "SpawnPlayer"}
+print("Found Remotes:", parryRemote, throwRemote, abilityRemote, claimRemote)
 
-    for _, pl in pairs(places) do
-        if pl then
-            for _, name in pairs(names) do
-                local candidate = pl:FindFirstChild(name)
-                if candidate then try(candidate) end
+-- УЛЬТИМАТИВНЫЙ поиск мячей
+local function getBallsUltimate()
+    local balls = {}
+    
+    -- Поиск во всех возможных местах
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") then
+            if string.find(obj.Name:lower(), "ball") or 
+               string.find(obj.Name:lower(), "sphere") or
+               obj.Name == "Handle" or
+               obj.Shape == Enum.PartType.Ball then
+                table.insert(balls, obj)
             end
-            -- попробовать пройти детей
-            for _, child in pairs(pl:GetDescendants()) do
-                if child.Name and table.find(names, child.Name) then
-                    try(child)
+        end
+    end
+    
+    -- Дополнительный поиск по скорости
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("BasePart") and obj.AssemblyLinearVelocity then
+            if obj.AssemblyLinearVelocity.Magnitude > 10 then
+                if not table.find(balls, obj) then
+                    table.insert(balls, obj)
                 end
             end
         end
     end
+    
+    return balls
 end
 
--- Попытка реэкипировать "бомбу" — проверяем рюкзак и персонажа, просим у сервера GiveTool если есть
-local function TryEquipBomb()
-    if not LocalPlayer then return end
-    local bp = LocalPlayer:FindFirstChild("Backpack")
-    local char = LocalPlayer.Character
-    -- 1) если LastToolName установлен — пробуем
-    if LastToolName then
-        if bp and bp:FindFirstChild(LastToolName) then
-            pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):EquipTool(bp[LastToolName]) end)
-            return
-        elseif char and char:FindFirstChild(LastToolName) then
-            -- уже в руках
-            return
-        end
-    end
-    -- 2) ищем по вероятным именам
-    for _, n in pairs(POSSIBLE_BOMB_NAMES) do
-        if bp and bp:FindFirstChild(n) then
-            pcall(function() LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):EquipTool(bp[n]) end)
-            return
-        elseif char and char:FindFirstChild(n) then
-            return
-        end
-    end
-    -- 3) пытаемся вызвать GiveTool/RequestTool ремоут (если он есть)
-    local give = ReplicatedStorage:FindFirstChild("GiveTool") or (ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("GiveTool"))
-    if give and give:IsA("RemoteEvent") and LastToolName then
-        pcall(function() give:FireServer(LastToolName) end)
-    end
-end
-
--- Форс-возрождение: комбинируем серверные вызовы и локальный LoadCharacter
-local function RespawnAndEquip()
-    -- 1) множество попыток серверных ремоутов
-    for i = 1, 4 do
-        TryServerRevive()
-        task.wait(0.18)
-    end
-    -- 2) локальный LoadCharacter если доступен
-    pcall(function()
-        if LocalPlayer and typeof(LocalPlayer.LoadCharacter) == "function" then
-            LocalPlayer:LoadCharacter()
-        end
-    end)
-    -- 3) через короткое время реэкип
-    task.delay(0.9, function()
-        TryEquipBomb()
-    end)
-end
-
--- Подключаемся к событию смерти любого персонажа (особенно локального)
-local function AttachAutoRevive(character)
-    if not character then return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then
-        humanoid = character:WaitForChild("Humanoid", 4)
-        if not humanoid then return end
-    end
-    humanoid.Died:Connect(function()
-        if Flags.AutoReviveActive then
-            -- Немедленная серия попыток
-            spawn(function()
-                RespawnAndEquip()
-            end)
-        end
-    end)
-end
-
--- Подключаем при добавлении персонажа
-if LocalPlayer then
-    LocalPlayer.CharacterAdded:Connect(function(char)
-        task.wait(0.5)
-        AttachAutoRevive(char)
-        TrackToolInCharacter(char)
-    end)
-    if LocalPlayer.Character then
-        AttachAutoRevive(LocalPlayer.Character)
-        TrackToolInCharacter(LocalPlayer.Character)
-    end
-end
-
--- ========== ESP: улучшенный (Highlight + Billboard с HP bar и дистанцией) ==========
-local ESPCache = {}
-
-local function CreateESPForPlayer(player)
-    if not player or player == LocalPlayer then return end
-    if ESPCache[player] then return end
-
-    local function onCharacter(char)
-        if not char then return end
-        local hrp = char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Torso")
-        if not hrp then return end
-
-        -- Highlight
-        local hl = Instance.new("Highlight")
-        hl.Name = "EvadeHighlight"
-        hl.Adornee = char
-        hl.FillTransparency = 0.7
-        hl.OutlineTransparency = 0
-        hl.Parent = char
-
-        -- Billboard
-        local billboard = Instance.new("BillboardGui")
-        billboard.Name = "EvadeBillboard"
-        billboard.Adornee = hrp
-        billboard.Size = UDim2.new(0, 220, 0, 72)
-        billboard.StudsOffset = Vector3.new(0, 2.8, 0)
-        billboard.AlwaysOnTop = true
-        billboard.Parent = hrp
-
-        local nameLabel = Instance.new("TextLabel", billboard)
-        nameLabel.Size = UDim2.new(1, -8, 0, 20)
-        nameLabel.Position = UDim2.new(0, 4, 0, 2)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.TextSize = 14
-        nameLabel.TextColor3 = Color3.fromRGB(255,255,255)
-        nameLabel.Text = player.Name
-
-        local hpBg = Instance.new("Frame", billboard)
-        hpBg.Size = UDim2.new(0.9, 0, 0, 10)
-        hpBg.Position = UDim2.new(0.05, 0, 0, 28)
-        hpBg.BackgroundColor3 = Color3.fromRGB(40,40,40)
-        hpBg.BorderSizePixel = 0
-
-        local hpBar = Instance.new("Frame", hpBg)
-        hpBar.Size = UDim2.new(1,0,1,0)
-        hpBar.BackgroundColor3 = Color3.fromRGB(0,200,0)
-        hpBar.BorderSizePixel = 0
-
-        local distLabel = Instance.new("TextLabel", billboard)
-        distLabel.Size = UDim2.new(1, -8, 0, 16)
-        distLabel.Position = UDim2.new(0, 4, 0, 42)
-        distLabel.BackgroundTransparency = 1
-        distLabel.Font = Enum.Font.Gotham
-        distLabel.TextSize = 12
-        distLabel.TextColor3 = Color3.fromRGB(220,220,220)
-        distLabel.Text = ""
-
-        -- Сохранение
-        ESPCache[player] = {
-            highlight = hl,
-            billboard = billboard,
-            hpBar = hpBar,
-            distLabel = distLabel,
-        }
-
-        -- Пульс подсветки
-        spawn(function()
-            while hl and hl.Parent do
-                pcall(function()
-                    hl.FillTransparency = 0.55 + math.sin(tick()*1.6)*0.2
-                end)
-                task.wait(0.08)
-            end
-        end)
-    end
-
-    if player.Character then onCharacter(player.Character) end
-    player.CharacterAdded:Connect(onCharacter)
-end
-
-local function RemoveESPForPlayer(player)
-    local data = ESPCache[player]
-    if not data then return end
-    pcall(function()
-        if data.highlight then data.highlight:Destroy() end
-        if data.billboard then data.billboard:Destroy() end
-    end)
-    ESPCache[player] = nil
-end
-
--- Обновление ESP каждый кадр (RenderStepped для плавности)
-RunService.RenderStepped:Connect(function()
-    if Flags.ESPActive then
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then
-                if not ESPCache[player] then
-                    CreateESPForPlayer(player)
+-- Auto Farm ULTRA
+spawn(function()
+    while true do
+        task.wait(0.1)
+        if getgenv().UltimateCheat.AutoFarm then
+            -- Поиск ближайшего врага
+            local closestEnemy = nil
+            local minDist = math.huge
+            
+            for _, plr in ipairs(game.Players:GetPlayers()) do
+                if plr ~= player and plr.Character then
+                    local enemyRoot = plr.Character:FindFirstChild("HumanoidRootPart")
+                    if enemyRoot then
+                        local dist = (root.Position - enemyRoot.Position).Magnitude
+                        if dist < minDist then
+                            minDist = dist
+                            closestEnemy = enemyRoot
+                        end
+                    end
                 end
-                local d = ESPCache[player]
-                if d and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-                    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-                    local health = humanoid.Health
-                    local maxh = (humanoid.MaxHealth > 0) and humanoid.MaxHealth or 100
-                    local frac = clamp(health / maxh, 0, 1)
-                    pcall(function()
-                        d.hpBar.Size = UDim2.new(frac, 0, 1, 0)
-                        d.hpBar.BackgroundColor3 = Color3.fromHSV(frac * 0.33, 1, 1)
-                    end)
-                    -- дистанция
-                    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("HumanoidRootPart") then
-                        local dist = (LocalPlayer.Character.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
-                        pcall(function() d.distLabel.Text = string.format("%.1f м", dist) end)
+            end
+            
+            if closestEnemy then
+                -- Телепортация к врагу
+                root.CFrame = closestEnemy.CFrame * CFrame.new(0, 0, -3)
+                
+                -- Авто-атака
+                if throwRemote then
+                    for i = 1, 3 do -- Мульти-выстрел
+                        throwRemote:FireServer()
+                        task.wait(0.05)
                     end
                 end
             end
         end
-    else
-        -- очистка
-        for p, _ in pairs(ESPCache) do
-            RemoveESPForPlayer(p)
+    end
+end)
+
+-- PERFECT Auto Parry
+local lastParryTime = 0
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        if getgenv().UltimateCheat.AutoParry then
+            local balls = getBallsUltimate()
+            
+            for _, ball in ipairs(balls) do
+                if ball and ball.Parent and ball.AssemblyLinearVelocity then
+                    local ballVel = ball.AssemblyLinearVelocity
+                    local ballPos = ball.Position
+                    local rootPos = root.Position
+                    
+                    local distance = (ballPos - rootPos).Magnitude
+                    local directionToPlayer = (rootPos - ballPos).Unit
+                    local approachSpeed = ballVel:Dot(directionToPlayer)
+                    
+                    -- ПРЕДСКАЗАНИЕ траектории
+                    local timeToHit = distance / math.max(ballVel.Magnitude, 1)
+                    local predictedPosition = ballPos + ballVel * timeToHit
+                    local predictedDistance = (predictedPosition - rootPos).Magnitude
+                    
+                    -- УСИЛЕННОЕ условие для парирования
+                    if predictedDistance < getgenv().UltimateCheat.ParryDistance and 
+                       approachSpeed > 0 and 
+                       timeToHit < 0.5 and
+                       tick() - lastParryTime > 0.3 then
+                        
+                        -- АВТОМАТИЧЕСКОЕ парирование
+                        if parryRemote then
+                            parryRemote:FireServer()
+                        else
+                            -- Активация всех инструментов
+                            for _, tool in ipairs(character:GetChildren()) do
+                                if tool:IsA("Tool") then
+                                    tool:Activate()
+                                    task.wait(0.1)
+                                    tool:Deactivate()
+                                end
+                            end
+                        end
+                        
+                        lastParryTime = tick()
+                        break
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+-- HYPER Auto Spam
+spawn(function()
+    while true do
+        task.wait(0.08) -- Очень быстрый спам
+        if getgenv().UltimateCheat.AutoSpam then
+            -- Спам всеми Remote'ами одновременно
+            if parryRemote then
+                for i = 1, 2 do
+                    pcall(function() parryRemote:FireServer() end)
+                end
+            end
+            
+            if throwRemote then
+                for i = 1, 2 do
+                    pcall(function() throwRemote:FireServer() end)
+                end
+            end
+            
+            if abilityRemote then
+                pcall(function() abilityRemote:FireServer() end)
+            end
         end
     end
 end)
 
--- Удаляем ESP при уходе игрока
-Players.PlayerRemoving:Connect(function(p) RemoveESPForPlayer(p) end)
-
--- ========== ЗАПУСК И ФИНАЛЬНЫЕ МЕЛОЧИ ==========
--- Инициализация существующих игроков (ESP не активируется пока флаг не включён)
-for _, p in pairs(Players:GetPlayers()) do
-    if p ~= LocalPlayer then
-        -- только подготовка подписок (реальная ESP создастся при включении)
-        p.CharacterAdded:Connect(function() end)
+-- ULTIMATE Ball ESP
+local ballHighlights = {}
+spawn(function()
+    while true do
+        task.wait(0.2)
+        
+        -- Очистка старых хайлайтов
+        for ball, highlight in pairs(ballHighlights) do
+            if not ball or not ball.Parent then
+                if highlight then highlight:Destroy() end
+                ballHighlights[ball] = nil
+            end
+        end
+        
+        if getgenv().UltimateCheat.BallESP then
+            local balls = getBallsUltimate()
+            
+            for _, ball in ipairs(balls) do
+                if ball and ball.Parent and not ballHighlights[ball] then
+                    local highlight = Instance.new("Highlight")
+                    highlight.Adornee = ball
+                    highlight.FillColor = Color3.fromRGB(0, 255, 0)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 0)
+                    highlight.FillTransparency = 0.3
+                    highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                    highlight.Parent = workspace
+                    
+                    -- Добавляем BillboardGui с информацией
+                    local billboard = Instance.new("BillboardGui")
+                    billboard.Adornee = ball
+                    billboard.Size = UDim2.new(0, 100, 0, 40)
+                    billboard.StudsOffset = Vector3.new(0, 3, 0)
+                    billboard.AlwaysOnTop = true
+                    
+                    local label = Instance.new("TextLabel")
+                    label.Size = UDim2.new(1, 0, 1, 0)
+                    label.BackgroundTransparency = 1
+                    label.Text = "BALL\n" .. math.floor((ball.Position - root.Position).Magnitude) .. " studs"
+                    label.TextColor3 = Color3.new(1, 1, 1)
+                    label.TextStrokeTransparency = 0
+                    label.Parent = billboard
+                    billboard.Parent = ball
+                    
+                    ballHighlights[ball] = {highlight, billboard}
+                end
+            end
+        else
+            -- Полная очистка при отключении
+            for ball, objects in pairs(ballHighlights) do
+                if objects[1] then objects[1]:Destroy() end
+                if objects[2] then objects[2]:Destroy() end
+            end
+            ballHighlights = {}
+        end
     end
-end
-
--- Сообщение в Output
-print("🎮 EVADE DOMINATOR loaded — встроенный интерфейс готов. Включите нужные вкладки для активации функций.")
-
--- Подсказка пользователю в чате (короткое)
-pcall(function()
-    StarterGui:SetCore("ChatMakeSystemMessage", {
-        Text = "EVADE DOMINATOR: UI загружен — откройте окно слева для настроек (Скорость/ESP/Auto-Revive).",
-        Color = Color3.fromRGB(255, 150, 40),
-        Font = Enum.Font.SourceSansBold,
-        FontSize = Enum.FontSize.Size24
-    })
 end)
 
--- Скрипт завершён (интерфейс работает сразу, без внешних зависимостей).
--- Если нужно: могу добавить экспорт конфигов, больше названий бомб, линий-трейсеров или авто-хоп/стабильную репликацию для конкретного сервера.
+-- Player ESP
+local playerHighlights = {}
+spawn(function()
+    while true do
+        task.wait(0.3)
+        
+        for enemy, highlight in pairs(playerHighlights) do
+            if not enemy or not enemy.Parent then
+                if highlight then highlight:Destroy() end
+                playerHighlights[enemy] = nil
+            end
+        end
+        
+        if getgenv().UltimateCheat.PlayerESP then
+            for _, plr in ipairs(game.Players:GetPlayers()) do
+                if plr ~= player and plr.Character then
+                    local enemy = plr.Character
+                    if not playerHighlights[enemy] then
+                        local highlight = Instance.new("Highlight")
+                        highlight.Adornee = enemy
+                        highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                        highlight.OutlineColor = Color3.fromRGB(255, 0, 255)
+                        highlight.FillTransparency = 0.4
+                        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+                        highlight.Parent = workspace
+                        playerHighlights[enemy] = highlight
+                    end
+                end
+            end
+        else
+            for enemy, highlight in pairs(playerHighlights) do
+                if highlight then highlight:Destroy() end
+            end
+            playerHighlights = {}
+        end
+    end
+end)
+
+-- Speed Hack ULTRA
+spawn(function()
+    RunService.Heartbeat:Connect(function()
+        if getgenv().UltimateCheat.SpeedHack and humanoid then
+            humanoid.WalkSpeed = getgenv().UltimateCheat.WalkSpeed
+        elseif humanoid then
+            humanoid.WalkSpeed = 16
+        end
+    end)
+end)
+
+-- Infinite Jump PRO
+UserInputService.JumpRequest:Connect(function()
+    if getgenv().UltimateCheat.InfiniteJump and humanoid then
+        humanoid:ChangeState("Jumping")
+    end
+end)
+
+-- NoClip GOD
+spawn(function()
+    RunService.Stepped:Connect(function()
+        if getgenv().UltimateCheat.NoClip and character then
+            for _, part in ipairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = false
+                end
+            end
+        end
+    end)
+end)
+
+-- Auto Ability SPAM
+spawn(function()
+    while true do
+        task.wait(0.5)
+        if getgenv().UltimateCheat.AutoAbility and abilityRemote then
+            pcall(function() abilityRemote:FireServer() end)
+        end
+    end
+end)
+
+-- Auto Claim Quest
+spawn(function()
+    while true do
+        task.wait(3)
+        if getgenv().UltimateCheat.AutoClaimQuest and claimRemote then
+            pcall(function() claimRemote:FireServer() end)
+        end
+    end
+end)
+
+-- Создание интерфейса
+local MainTab = Window:CreateTab("MAIN HACKS", nil)
+local VisualTab = Window:CreateTab("VISUALS", nil)
+local SettingsTab = Window:CreateTab("SETTINGS", nil)
+
+-- MAIN HACKS
+MainTab:CreateToggle({
+    Name = "🔥 AUTO FARM ULTRA",
+    CurrentValue = false,
+    Flag = "AutoFarmUltra",
+    Callback = function(Value)
+        getgenv().UltimateCheat.AutoFarm = Value
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "🛡️ PERFECT AUTO PARRY",
+    CurrentValue = false,
+    Flag = "AutoParryPerfect",
+    Callback = function(Value)
+        getgenv().UltimateCheat.AutoParry = Value
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "💥 HYPER AUTO SPAM",
+    CurrentValue = false,
+    Flag = "AutoSpamHyper",
+    Callback = function(Value)
+        getgenv().UltimateCheat.AutoSpam = Value
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "🚀 SPEED HACK ULTRA",
+    CurrentValue = false,
+    Flag = "SpeedHackUltra",
+    Callback = function(Value)
+        getgenv().UltimateCheat.SpeedHack = Value
+    end,
+})
+
+MainTab:CreateToggle({
+    Name = "👻 NO CLIP GOD MODE",
+    CurrentValue = false,
+    Flag = "NoClipGod",
+    Callback = function(Value)
+        getgenv().UltimateCheat.NoClip = Value
+    end,
+})
+
+-- VISUALS
+VisualTab:CreateToggle({
+    Name = "🎯 BALL ESP ULTIMATE",
+    CurrentValue = false,
+    Flag = "BallESPExtreme",
+    Callback = function(Value)
+        getgenv().UltimateCheat.BallESP = Value
+    end,
+})
+
+VisualTab:CreateToggle({
+    Name = "👁️ PLAYER ESP WALLHACK",
+    CurrentValue = false,
+    Flag = "PlayerESPExtreme",
+    Callback = function(Value)
+        getgenv().UltimateCheat.PlayerESP = Value
+    end,
+})
+
+-- SETTINGS
+SettingsTab:CreateSlider({
+    Name = "PARRY DISTANCE",
+    Range = {10, 50},
+    Increment = 1,
+    Suffix = "Studs",
+    CurrentValue = 30,
+    Flag = "ParryDistanceUltra",
+    Callback = function(Value)
+        getgenv().UltimateCheat.ParryDistance = Value
+    end,
+})
+
+SettingsTab:CreateSlider({
+    Name = "WALK SPEED",
+    Range = {16, 300},
+    Increment = 5,
+    Suffix = "Speed",
+    CurrentValue = 100,
+    Flag = "WalkSpeedUltra",
+    Callback = function(Value)
+        getgenv().UltimateCheat.WalkSpeed = Value
+    end,
+})
+
+SettingsTab:CreateToggle({
+    Name = "INFINITE JUMP",
+    CurrentValue = false,
+    Flag = "InfiniteJumpPro",
+    Callback = function(Value)
+        getgenv().UltimateCheat.InfiniteJump = Value
+    end,
+})
+
+SettingsTab:CreateButton({
+    Name = "💀 DESTROY GUI",
+    Callback = function()
+        Rayfield:Destroy()
+    end,
+})
+
+Rayfield:Notify({
+    Title = "🔥 ULTIMATE CHEAT LOADED",
+    Content = "ALL HACKS ACTIVATED! YOU ARE NOW UNBEATABLE!",
+    Duration = 8,
+    Image = nil
+})
+
+print("🎮 ULTIMATE DEATH BALL CHEAT ACTIVATED - DOMINATE THE GAME!")
