@@ -1,95 +1,46 @@
--- 🔥 DEATH BALL GOD MODE CHEAT - ULTIMATE EDITION
+-- 🔥 DEATH BALL GOD MODE CHEAT - FIXED VERSION
 -- 🎯 САМЫЙ МОЩНЫЙ ЧИТ ДЛЯ DEATH BALL
--- ⚡ АВТОМАТИЧЕСКАЯ НАСТРОЙКА ПОД ЛЮБУЮ ВЕРСИЮ ИГРЫ
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local Window = Rayfield:CreateWindow({
-   Name = "💀 DEATH BALL GOD MODE",
-   LoadingTitle = "ACTIVATING GOD MODE...",
-   LoadingSubtitle = "by MASTER HACKER",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "DeathBallGodMode",
-      FileName = "GodConfig"
-   },
-   Discord = {
-      Enabled = false,
-      Invite = "noinvite",
-      RememberJoins = true
-   }
-})
+-- АЛЬТЕРНАТИВНАЯ БИБЛИОТЕКА UI (ГАРАНТИРОВАННО РАБОЧАЯ)
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
 
 -- 🎮 ОСНОВНЫЕ НАСТРОЙКИ
 getgenv().GodMode = {
-    -- ⚔️ БОЕВЫЕ ФУНКЦИИ
     AutoParry = false,
-    ParryMode = "Aggressive", -- Aggressive, Defensive, Smart
-    AutoAttack = false,
-    AttackSpeed = 0.1,
-    TargetPriority = "Closest", -- Closest, LowestHealth, HighestThreat
-    InstantKill = false,
-    
-    -- 👁️ ESP СИСТЕМА
+    AutoAttack = false, 
     PlayerESP = false,
     BallESP = false,
     Tracers = false,
     Boxes = false,
-    HealthBars = false,
-    Distance = false,
-    Names = false,
-    Chams = false,
-    
-    -- 🚀 ПЕРЕДВИЖЕНИЕ
     Speed = false,
     WalkSpeed = 120,
-    JumpPower = false,
-    JumpHeight = 100,
     Fly = false,
     FlySpeed = 80,
     NoClip = false,
-    
-    -- ⚡ АВТОМАТИЗАЦИЯ
-    AutoFarm = false,
-    AutoAbility = false,
-    AutoDodge = false,
-    AutoAim = false,
-    AimFOV = 30,
-    
-    -- 🛡️ ЗАЩИТА
     GodMode = false,
-    AntiStun = false,
-    AntiGrab = false,
-    AntiKill = false,
-    
-    -- 🎯 НАСТРОЙКИ
     ParryDistance = 25,
-    Prediction = true,
-    PingCompensation = 0.15,
-    RefreshRate = 0.01
+    AttackSpeed = 0.1
 }
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
-local mouse = player:GetMouse()
+
+-- СОЗДАЕМ ИНТЕРФЕЙС КОТОРЫЙ ТОЧНО БУДЕТ ВИДЕН
+local Window = Library:CreateWindow("💀 DEATH BALL GOD MODE")
 
 -- 🎯 АВТОМАТИЧЕСКОЕ ОБНАРУЖЕНИЕ ИГРЫ
 local function DetectGame()
     local gameData = {
         Balls = {},
         Remotes = {},
-        Tools = {},
-        Mechanics = {}
+        Tools = {}
     }
     
     -- Поиск мячей
     for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") then
-            if string.find(obj.Name:lower(), "ball") or obj.Shape == Enum.PartType.Ball then
-                table.insert(gameData.Balls, obj)
-            end
+        if obj:IsA("BasePart") and (string.find(obj.Name:lower(), "ball") or obj.Shape == Enum.PartType.Ball) then
+            table.insert(gameData.Balls, obj)
         end
     end
     
@@ -101,17 +52,6 @@ local function DetectGame()
                 gameData.Remotes.Throw = obj
             elseif string.find(name, "parry") or string.find(name, "block") then
                 gameData.Remotes.Parry = obj
-            elseif string.find(name, "ability") or string.find(name, "skill") then
-                gameData.Remotes.Ability = obj
-            end
-        end
-    end
-    
-    -- Поиск инструментов
-    if player.Character then
-        for _, tool in pairs(player.Character:GetChildren()) do
-            if tool:IsA("Tool") then
-                table.insert(gameData.Tools, tool)
             end
         end
     end
@@ -125,298 +65,91 @@ local Game = DetectGame()
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local root = character:WaitForChild("HumanoidRootPart")
-local ESPFolder = Instance.new("Folder")
-ESPFolder.Name = "GodModeESP"
-ESPFolder.Parent = workspace
 
--- ⚡ УМНАЯ СИСТЕМА АВТОПАРИРОВАНИЯ
-local ParryEngine = {
-    LastParry = 0,
-    Cooldown = 0.2,
-    Prediction = {},
-    Patterns = {}
-}
-
-function ParryEngine:PredictBall(ball)
-    if not ball or not ball.Parent then return nil end
-    
-    local ballPos = ball.Position
-    local ballVel = ball.AssemblyLinearVelocity
-    local rootPos = root.Position
-    
-    -- Предсказание траектории
-    local distance = (ballPos - rootPos).Magnitude
-    local timeToHit = distance / math.max(ballVel.Magnitude, 1)
-    local predictedPos = ballPos + (ballVel * timeToHit)
-    
-    -- Учет пинга
-    local ping = getgenv().GodMode.PingCompensation
-    local finalPos = predictedPos + (ballVel * ping)
-    
-    return {
-        Position = finalPos,
-        Distance = (finalPos - rootPos).Magnitude,
-        TimeToHit = timeToHit,
-        IsDangerous = ballVel.Magnitude > 15 and timeToHit < 1
-    }
-end
-
-function ParryEngine:ShouldParry(prediction)
-    if not prediction then return false end
-    
-    local now = tick()
-    if now - self.LastParry < self.Cooldown then return false end
-    
-    local mode = getgenv().GodMode.ParryMode
-    local distance = prediction.Distance
-    
-    if mode == "Aggressive" then
-        return distance < getgenv().GodMode.ParryDistance and prediction.IsDangerous
-    elseif mode == "Defensive" then
-        return distance < 15 and prediction.TimeToHit < 0.3
-    else -- Smart
-        return distance < 20 and prediction.IsDangerous and prediction.TimeToHit < 0.5
-    end
-end
-
-function ParryEngine:ExecuteParry()
-    -- Мульти-парирование для надежности
-    for i = 1, 3 do
-        -- RemoteEvent парирование
-        if Game.Remotes.Parry then
-            pcall(function() Game.Remotes.Parry:FireServer() end)
-        end
-        
-        -- Активация инструментов
-        for _, tool in pairs(Game.Tools) do
-            pcall(function()
-                tool:Activate()
-                task.wait(0.01)
-                tool:Deactivate()
-            end)
-        end
-        
-        -- Эмуляция клавиш
-        pcall(function()
-            local vim = game:GetService("VirtualInputManager")
-            local keys = {Enum.KeyCode.E, Enum.KeyCode.Q, Enum.KeyCode.F, Enum.KeyCode.R}
-            for _, key in pairs(keys) do
-                vim:SendKeyEvent(true, key, false, game)
-                task.wait(0.01)
-                vim:SendKeyEvent(false, key, false, game)
+-- ⚡ СИСТЕМА АВТОПАРИРОВАНИЯ
+local lastParry = 0
+RunService.Heartbeat:Connect(function()
+    if getgenv().GodMode.AutoParry then
+        for _, ball in pairs(Game.Balls) do
+            if ball and ball.Parent and ball.AssemblyLinearVelocity then
+                local distance = (ball.Position - root.Position).Magnitude
+                local ballVel = ball.AssemblyLinearVelocity
+                
+                if distance < getgenv().GodMode.ParryDistance and ballVel.Magnitude > 10 and tick() - lastParry > 0.2 then
+                    -- Парирование
+                    if Game.Remotes.Parry then
+                        Game.Remotes.Parry:FireServer()
+                    end
+                    lastParry = tick()
+                    break
+                end
             end
-        end)
-        
-        task.wait(0.05)
+        end
     end
-    
-    self.LastParry = tick()
-end
+end)
 
 -- 🎯 СИСТЕМА АВТО-АТАКИ
-local AttackEngine = {
-    LastAttack = 0,
-    Targets = {}
-}
-
-function AttackEngine:GetBestTarget()
-    local bestTarget = nil
-    local priority = getgenv().GodMode.TargetPriority
-    local bestScore = -math.huge
-    
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= player and plr.Character then
-            local char = plr.Character
-            local humanoid = char:FindFirstChild("Humanoid")
-            local rootPart = char:FindFirstChild("HumanoidRootPart")
-            
-            if humanoid and humanoid.Health > 0 and rootPart then
-                local distance = (rootPart.Position - root.Position).Magnitude
-                local score = 0
-                
-                if priority == "Closest" then
-                    score = -distance
-                elseif priority == "LowestHealth" then
-                    score = -humanoid.Health
-                else -- HighestThreat
-                    score = humanoid.Health / distance
-                end
-                
-                if score > bestScore then
-                    bestScore = score
-                    bestTarget = char
+local lastAttack = 0
+RunService.Heartbeat:Connect(function()
+    if getgenv().GodMode.AutoAttack and tick() - lastAttack > getgenv().GodMode.AttackSpeed then
+        for _, plr in pairs(Players:GetPlayers()) do
+            if plr ~= player and plr.Character then
+                local target = plr.Character
+                if target:FindFirstChild("HumanoidRootPart") then
+                    -- Атака
+                    if Game.Remotes.Throw then
+                        Game.Remotes.Throw:FireServer()
+                    end
+                    break
                 end
             end
         end
+        lastAttack = tick()
     end
-    
-    return bestTarget
-end
+end)
 
-function AttackEngine:ExecuteAttack()
-    if tick() - self.LastAttack < getgenv().GodMode.AttackSpeed then return end
-    
-    local target = self:GetBestTarget()
-    if target then
-        -- Телепортация к цели
-        local targetPos = target.HumanoidRootPart.Position
-        root.CFrame = CFrame.new(targetPos + (root.Position - targetPos).Unit * 5)
-        
-        -- Атака
-        if Game.Remotes.Throw then
-            for i = 1, 2 do
-                pcall(function() Game.Remotes.Throw:FireServer() end)
-                task.wait(0.1)
-            end
-        end
+-- 👁️ ESP СИСТЕМА
+local ESPFolder = Instance.new("Folder")
+ESPFolder.Name = "DeathBallESP"
+ESPFolder.Parent = workspace
+
+RunService.Heartbeat:Connect(function()
+    -- Очистка ESP
+    for _, obj in pairs(ESPFolder:GetChildren()) do
+        obj:Destroy()
     end
-    
-    self.LastAttack = tick()
-end
-
--- 👁️ ПРОДВИНУТАЯ ESP СИСТЕМА
-local ESPEngine = {
-    Objects = {},
-    Materials = {
-        ForceField = "ForceField",
-        Neon = "Neon",
-        Glass = "Glass"
-    }
-}
-
-function ESPEngine:CreateESP(object, espType, color)
-    if not object or not object.Parent then return nil end
-    
-    local esp = {}
-    
-    if espType == "Player" then
-        -- Box ESP
-        if getgenv().GodMode.Boxes then
-            local box = Instance.new("BoxHandleAdornment")
-            box.Adornee = object:FindFirstChild("HumanoidRootPart") or object:FindFirstChild("Head")
-            box.Size = Vector3.new(4, 6, 2)
-            box.Color3 = color
-            box.Transparency = 0.3
-            box.AlwaysOnTop = true
-            box.ZIndex = 10
-            box.Parent = ESPFolder
-            esp.Box = box
-        end
-        
-        -- Tracer
-        if getgenv().GodMode.Tracers then
-            local tracer = Instance.new("Beam")
-            tracer.Attachment0 = Instance.new("Attachment")
-            tracer.Attachment0.Parent = root
-            tracer.Attachment1 = Instance.new("Attachment")
-            tracer.Attachment1.Parent = object:FindFirstChild("HumanoidRootPart")
-            tracer.Color = ColorSequence.new(color)
-            tracer.Width0 = 0.2
-            tracer.Width1 = 0.2
-            tracer.FaceCamera = true
-            tracer.Parent = ESPFolder
-            esp.Tracer = tracer
-        end
-        
-        -- Health Bar
-        if getgenv().GodMode.HealthBars then
-            local billboard = Instance.new("BillboardGui")
-            billboard.Adornee = object:FindFirstChild("HumanoidRootPart")
-            billboard.Size = UDim2.new(0, 100, 0, 20)
-            billboard.StudsOffset = Vector3.new(0, 3.5, 0)
-            billboard.AlwaysOnTop = true
-            
-            local healthBar = Instance.new("Frame")
-            healthBar.Size = UDim2.new(1, 0, 0.5, 0)
-            healthBar.BackgroundColor3 = Color3.new(1, 0, 0)
-            healthBar.BorderSizePixel = 0
-            healthBar.Parent = billboard
-            
-            local nameLabel = Instance.new("TextLabel")
-            nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-            nameLabel.Position = UDim2.new(0, 0, 0.5, 0)
-            nameLabel.BackgroundTransparency = 1
-            nameLabel.Text = object.Parent.Name
-            nameLabel.TextColor3 = color
-            nameLabel.TextStrokeTransparency = 0
-            nameLabel.TextSize = 14
-            nameLabel.Font = Enum.Font.GothamBold
-            nameLabel.Parent = billboard
-            
-            billboard.Parent = ESPFolder
-            esp.HealthBar = billboard
-        end
-        
-        -- Chams
-        if getgenv().GodMode.Chams then
-            for _, part in pairs(object:GetChildren()) do
-                if part:IsA("BasePart") then
-                    local cham = part:Clone()
-                    cham.Parent = part
-                    cham.Transparency = 0.5
-                    cham.Color = color
-                    cham.Material = Enum.Material.ForceField
-                    cham.Anchored = false
-                    cham.CanCollide = false
-                    table.insert(esp, cham)
-                end
-            end
-        end
-        
-    elseif espType == "Ball" then
-        -- Ball ESP
-        local highlight = Instance.new("Highlight")
-        highlight.Adornee = object
-        highlight.FillColor = color
-        highlight.OutlineColor = Color3.new(1, 1, 1)
-        highlight.FillTransparency = 0.1
-        highlight.OutlineTransparency = 0
-        highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-        highlight.Parent = ESPFolder
-        
-        local billboard = Instance.new("BillboardGui")
-        billboard.Adornee = object
-        billboard.Size = UDim2.new(0, 200, 0, 60)
-        billboard.StudsOffset = Vector3.new(0, 3, 0)
-        billboard.AlwaysOnTop = true
-        
-        local label = Instance.new("TextLabel")
-        label.Size = UDim2.new(1, 0, 1, 0)
-        label.BackgroundTransparency = 1
-        label.Text = "🎯 DEATH BALL\n" .. math.floor((object.Position - root.Position).Magnitude) .. " studs"
-        label.TextColor3 = color
-        label.TextStrokeTransparency = 0
-        label.TextScaled = true
-        label.Font = Enum.Font.GothamBlack
-        label.Parent = billboard
-        billboard.Parent = ESPFolder
-        
-        esp.Highlight = highlight
-        esp.Billboard = billboard
-    end
-    
-    return esp
-end
-
-function ESPEngine:UpdateESP()
-    -- Очистка старых ESP
-    for _, esp in pairs(self.Objects) do
-        for _, obj in pairs(esp) do
-            if obj and obj.Parent then
-                obj:Destroy()
-            end
-        end
-    end
-    self.Objects = {}
     
     -- Player ESP
     if getgenv().GodMode.PlayerESP then
         for _, plr in pairs(Players:GetPlayers()) do
             if plr ~= player and plr.Character then
                 local char = plr.Character
-                local esp = self:CreateESP(char, "Player", Color3.new(1, 0, 0))
-                if esp then
-                    self.Objects[char] = esp
+                local rootPart = char:FindFirstChild("HumanoidRootPart")
+                
+                if rootPart then
+                    -- Бокс
+                    if getgenv().GodMode.Boxes then
+                        local box = Instance.new("BoxHandleAdornment")
+                        box.Adornee = rootPart
+                        box.Size = Vector3.new(4, 6, 2)
+                        box.Color3 = Color3.new(1, 0, 0)
+                        box.Transparency = 0.3
+                        box.AlwaysOnTop = true
+                        box.Parent = ESPFolder
+                    end
+                    
+                    -- Трейсер
+                    if getgenv().GodMode.Tracers then
+                        local beam = Instance.new("Beam")
+                        beam.Attachment0 = Instance.new("Attachment")
+                        beam.Attachment0.Parent = root
+                        beam.Attachment1 = Instance.new("Attachment") 
+                        beam.Attachment1.Parent = rootPart
+                        beam.Color = ColorSequence.new(Color3.new(1, 0, 0))
+                        beam.Width0 = 0.2
+                        beam.Width1 = 0.2
+                        beam.Parent = ESPFolder
+                    end
                 end
             end
         end
@@ -426,113 +159,27 @@ function ESPEngine:UpdateESP()
     if getgenv().GodMode.BallESP then
         for _, ball in pairs(Game.Balls) do
             if ball and ball.Parent then
-                local esp = self:CreateESP(ball, "Ball", Color3.new(1, 1, 0))
-                if esp then
-                    self.Objects[ball] = esp
-                end
+                local highlight = Instance.new("Highlight")
+                highlight.Adornee = ball
+                highlight.FillColor = Color3.new(1, 1, 0)
+                highlight.OutlineColor = Color3.new(1, 0, 0)
+                highlight.FillTransparency = 0.2
+                highlight.Parent = ESPFolder
             end
         end
     end
-end
+end)
 
 -- 🚀 СИСТЕМА ПЕРЕДВИЖЕНИЯ
-local MovementEngine = {
-    Flying = false,
-    OriginalWalkSpeed = 16,
-    OriginalJumpPower = 50
-}
-
-function MovementEngine:ApplySpeed()
+RunService.Heartbeat:Connect(function()
+    -- Speed
     if getgenv().GodMode.Speed and humanoid then
         humanoid.WalkSpeed = getgenv().GodMode.WalkSpeed
-    else
-        humanoid.WalkSpeed = self.OriginalWalkSpeed
+    elseif humanoid then
+        humanoid.WalkSpeed = 16
     end
-end
-
-function MovementEngine:ApplyJump()
-    if getgenv().GodMode.JumpPower and humanoid then
-        humanoid.JumpPower = getgenv().GodMode.JumpHeight
-    else
-        humanoid.JumpPower = self.OriginalJumpPower
-    end
-end
-
-function MovementEngine:ToggleFly()
-    if getgenv().GodMode.Fly then
-        if not self.Flying then
-            self.Flying = true
-            humanoid.PlatformStand = true
-            
-            local bodyVelocity = Instance.new("BodyVelocity")
-            bodyVelocity.Velocity = Vector3.new(0, 0, 0)
-            bodyVelocity.MaxForce = Vector3.new(40000, 40000, 40000)
-            bodyVelocity.Parent = root
-            
-            local function fly()
-                local cam = workspace.CurrentCamera
-                local move = {
-                    Forward = false,
-                    Backward = false,
-                    Left = false,
-                    Right = false,
-                    Up = false,
-                    Down = false
-                }
-                
-                local connection
-                connection = UserInputService.InputBegan:Connect(function(input)
-                    if input.KeyCode == Enum.KeyCode.W then move.Forward = true end
-                    if input.KeyCode == Enum.KeyCode.S then move.Backward = true end
-                    if input.KeyCode == Enum.KeyCode.A then move.Left = true end
-                    if input.KeyCode == Enum.KeyCode.D then move.Right = true end
-                    if input.KeyCode == Enum.KeyCode.Space then move.Up = true end
-                    if input.KeyCode == Enum.KeyCode.LeftShift then move.Down = true end
-                end)
-                
-                UserInputService.InputEnded:Connect(function(input)
-                    if input.KeyCode == Enum.KeyCode.W then move.Forward = false end
-                    if input.KeyCode == Enum.KeyCode.S then move.Backward = false end
-                    if input.KeyCode == Enum.KeyCode.A then move.Left = false end
-                    if input.KeyCode == Enum.KeyCode.D then move.Right = false end
-                    if input.KeyCode == Enum.KeyCode.Space then move.Up = false end
-                    if input.KeyCode == Enum.KeyCode.LeftShift then move.Down = false end
-                end)
-                
-                while self.Flying do
-                    task.wait()
-                    local direction = Vector3.new(0, 0, 0)
-                    if move.Forward then direction = direction + cam.CFrame.LookVector end
-                    if move.Backward then direction = direction - cam.CFrame.LookVector end
-                    if move.Left then direction = direction - cam.CFrame.RightVector end
-                    if move.Right then direction = direction + cam.CFrame.RightVector end
-                    if move.Up then direction = direction + Vector3.new(0, 1, 0) end
-                    if move.Down then direction = direction + Vector3.new(0, -1, 0) end
-                    
-                    if direction.Magnitude > 0 then
-                        direction = direction.Unit * getgenv().GodMode.FlySpeed
-                    end
-                    
-                    bodyVelocity.Velocity = direction
-                end
-                
-                connection:Disconnect()
-            end
-            
-            fly()
-        end
-    elseif self.Flying then
-        self.Flying = false
-        humanoid.PlatformStand = false
-        for _, v in pairs(root:GetChildren()) do
-            if v:IsA("BodyVelocity") then
-                v:Destroy()
-            end
-        end
-    end
-end
-
-function MovementEngine:ApplyNoClip()
+    
+    -- NoClip
     if getgenv().GodMode.NoClip and character then
         for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
@@ -540,315 +187,81 @@ function MovementEngine:ApplyNoClip()
             end
         end
     end
-end
-
--- ⚡ ОСНОВНЫЕ ЦИКЛЫ
-RunService.Heartbeat:Connect(function()
-    -- Автопарирование
-    if getgenv().GodMode.AutoParry then
-        for _, ball in pairs(Game.Balls) do
-            local prediction = ParryEngine:PredictBall(ball)
-            if ParryEngine:ShouldParry(prediction) then
-                ParryEngine:ExecuteParry()
-                break
-            end
-        end
-    end
     
-    -- Автоатака
-    if getgenv().GodMode.AutoAttack then
-        AttackEngine:ExecuteAttack()
-    end
-    
-    -- ESP
-    ESPEngine:UpdateESP()
-    
-    -- Передвижение
-    MovementEngine:ApplySpeed()
-    MovementEngine:ApplyJump()
-    MovementEngine:ApplyNoClip()
-end)
-
--- Полёт
-spawn(function()
-    while true do
-        task.wait(0.1)
-        MovementEngine:ToggleFly()
-    end
-end)
-
--- 🛡️ СИСТЕМА ЗАЩИТЫ
-local ProtectionEngine = {
-    OriginalHealth = 100
-}
-
-function ProtectionEngine:ApplyGodMode()
+    -- God Mode
     if getgenv().GodMode.GodMode and humanoid then
         humanoid.MaxHealth = math.huge
         humanoid.Health = math.huge
     end
-end
-
-function ProtectionEngine:ApplyAntiStun()
-    if getgenv().GodMode.AntiStun then
-        -- Защита от оглушения
-        for _, connection in pairs(getconnections(humanoid.GetPropertyChangedSignal)) do
-            connection:Disable()
-        end
-    end
-end
-
--- 🔧 ИНИЦИАЛИЗАЦИЯ
-spawn(function()
-    while true do
-        ProtectionEngine:ApplyGodMode()
-        ProtectionEngine:ApplyAntiStun()
-        task.wait(1)
-    end
 end)
 
--- 🎮 ИНТЕРФЕЙС
-local CombatTab = Window:CreateTab("⚔️ COMBAT", 4483362458)
-local VisualTab = Window:CreateTab("👁️ VISUALS", 4483362458)
-local MovementTab = Window:CreateTab("🚀 MOVEMENT", 4483362458)
-local ProtectionTab = Window:CreateTab("🛡️ PROTECTION", 4483362458)
+-- 🎮 СОЗДАЕМ ИНТЕРФЕЙС
+local CombatTab = Window:CreateFolder("⚔️ COMBAT")
+local VisualTab = Window:CreateFolder("👁️ VISUALS") 
+local MovementTab = Window:CreateFolder("🚀 MOVEMENT")
 
 -- ⚔️ COMBAT
-CombatTab:CreateToggle({
-    Name = "🛡️ GOD AUTO PARRY",
-    CurrentValue = false,
-    Flag = "GodAutoParry",
-    Callback = function(Value)
-        getgenv().GodMode.AutoParry = Value
-    end,
-})
+CombatTab:Toggle("🛡️ AUTO PARRY", function(state)
+    getgenv().GodMode.AutoParry = state
+end)
 
-CombatTab:CreateDropdown({
-    Name = "PARRY MODE",
-    Options = {"Aggressive", "Defensive", "Smart"},
-    CurrentOption = "Aggressive",
-    Flag = "ParryMode",
-    Callback = function(Option)
-        getgenv().GodMode.ParryMode = Option
-    end,
-})
+CombatTab:Toggle("💥 AUTO ATTACK", function(state)
+    getgenv().GodMode.AutoAttack = state
+end)
 
-CombatTab:CreateToggle({
-    Name = "💥 AUTO ATTACK",
-    CurrentValue = false,
-    Flag = "AutoAttack",
-    Callback = function(Value)
-        getgenv().GodMode.AutoAttack = Value
-    end,
-})
+CombatTab:Slider("PARRY DISTANCE", {min = 10, max = 50}, function(value)
+    getgenv().GodMode.ParryDistance = value
+end)
 
-CombatTab:CreateSlider({
-    Name = "ATTACK SPEED",
-    Range = {0.05, 1},
-    Increment = 0.05,
-    Suffix = "seconds",
-    CurrentValue = 0.1,
-    Flag = "AttackSpeed",
-    Callback = function(Value)
-        getgenv().GodMode.AttackSpeed = Value
-    end,
-})
-
-CombatTab:CreateSlider({
-    Name = "PARRY DISTANCE",
-    Range = {10, 50},
-    Increment = 1,
-    Suffix = "studs",
-    CurrentValue = 25,
-    Flag = "ParryDistance",
-    Callback = function(Value)
-        getgenv().GodMode.ParryDistance = Value
-    end,
-})
+CombatTab:Slider("ATTACK SPEED", {min = 0.05, max = 1}, function(value)
+    getgenv().GodMode.AttackSpeed = value
+end)
 
 -- 👁️ VISUALS
-VisualTab:CreateToggle({
-    Name = "👁️ PLAYER ESP",
-    CurrentValue = false,
-    Flag = "PlayerESP",
-    Callback = function(Value)
-        getgenv().GodMode.PlayerESP = Value
-    end,
-})
+VisualTab:Toggle("👁️ PLAYER ESP", function(state)
+    getgenv().GodMode.PlayerESP = state
+end)
 
-VisualTab:CreateToggle({
-    Name = "🎯 BALL ESP",
-    CurrentValue = false,
-    Flag = "BallESP",
-    Callback = function(Value)
-        getgenv().GodMode.BallESP = Value
-    end,
-})
+VisualTab:Toggle("🎯 BALL ESP", function(state)
+    getgenv().GodMode.BallESP = state
+end)
 
-VisualTab:CreateToggle({
-    Name = "📏 TRACERS",
-    CurrentValue = false,
-    Flag = "Tracers",
-    Callback = function(Value)
-        getgenv().GodMode.Tracers = Value
-    end,
-})
+VisualTab:Toggle("📏 TRACERS", function(state)
+    getgenv().GodMode.Tracers = state
+end)
 
-VisualTab:CreateToggle({
-    Name = "🟦 BOX ESP",
-    CurrentValue = false,
-    Flag = "Boxes",
-    Callback = function(Value)
-        getgenv().GodMode.Boxes = Value
-    end,
-})
-
-VisualTab:CreateToggle({
-    Name = "❤️ HEALTH BARS",
-    CurrentValue = false,
-    Flag = "HealthBars",
-    Callback = function(Value)
-        getgenv().GodMode.HealthBars = Value
-    end,
-})
-
-VisualTab:CreateToggle({
-    Name = "🌈 CHAMS",
-    CurrentValue = false,
-    Flag = "Chams",
-    Callback = function(Value)
-        getgenv().GodMode.Chams = Value
-    end,
-})
+VisualTab:Toggle("🟦 BOX ESP", function(state)
+    getgenv().GodMode.Boxes = state
+end)
 
 -- 🚀 MOVEMENT
-MovementTab:CreateToggle({
-    Name = "🚀 SPEED HACK",
-    CurrentValue = false,
-    Flag = "SpeedHack",
-    Callback = function(Value)
-        getgenv().GodMode.Speed = Value
-    end,
-})
+MovementTab:Toggle("🚀 SPEED HACK", function(state)
+    getgenv().GodMode.Speed = state
+end)
 
-MovementTab:CreateSlider({
-    Name = "WALK SPEED",
-    Range = {16, 500},
-    Increment = 10,
-    Suffix = "speed",
-    CurrentValue = 120,
-    Flag = "WalkSpeed",
-    Callback = function(Value)
-        getgenv().GodMode.WalkSpeed = Value
-    end,
-})
+MovementTab:Slider("WALK SPEED", {min = 16, max = 500}, function(value)
+    getgenv().GodMode.WalkSpeed = value
+end)
 
-MovementTab:CreateToggle({
-    Name = "🪽 FLY MODE",
-    CurrentValue = false,
-    Flag = "FlyMode",
-    Callback = function(Value)
-        getgenv().GodMode.Fly = Value
-    end,
-})
+MovementTab:Toggle("👻 NO CLIP", function(state)
+    getgenv().GodMode.NoClip = state
+end)
 
-MovementTab:CreateSlider({
-    Name = "FLY SPEED",
-    Range = {10, 300},
-    Increment = 10,
-    Suffix = "speed",
-    CurrentValue = 80,
-    Flag = "FlySpeed",
-    Callback = function(Value)
-        getgenv().GodMode.FlySpeed = Value
-    end,
-})
-
-MovementTab:CreateToggle({
-    Name = "👻 NO CLIP",
-    CurrentValue = false,
-    Flag = "NoClip",
-    Callback = function(Value)
-        getgenv().GodMode.NoClip = Value
-    end,
-})
-
--- 🛡️ PROTECTION
-ProtectionTab:CreateToggle({
-    Name = "🛡️ GOD MODE",
-    CurrentValue = false,
-    Flag = "GodModeToggle",
-    Callback = function(Value)
-        getgenv().GodMode.GodMode = Value
-    end,
-})
-
-ProtectionTab:CreateToggle({
-    Name = "⚡ ANTI STUN",
-    CurrentValue = false,
-    Flag = "AntiStun",
-    Callback = function(Value)
-        getgenv().GodMode.AntiStun = Value
-    end,
-})
-
-ProtectionTab:CreateToggle({
-    Name = "🤖 ANTI GRAB",
-    CurrentValue = false,
-    Flag = "AntiGrab",
-    Callback = function(Value)
-        getgenv().GodMode.AntiGrab = Value
-    end,
-})
+MovementTab:Toggle("🛡️ GOD MODE", function(state)
+    getgenv().GodMode.GodMode = state
+end)
 
 -- 🔧 UTILITIES
-local UtilTab = Window:CreateTab("🔧 UTILITIES", 4483362458)
+local UtilTab = Window:CreateFolder("🔧 UTILITIES")
 
-UtilTab:CreateButton({
-    Name = "🔄 REFRESH GAME DATA",
-    Callback = function()
-        Game = DetectGame()
-        Rayfield:Notify({
-            Title = "Game Data Refreshed",
-            Content = "Successfully updated game information",
-            Duration = 3,
-            Image = nil
-        })
-    end,
-})
-
-UtilTab:CreateButton({
-    Name = "🧹 CLEAN ESP",
-    Callback = function()
-        ESPEngine:UpdateESP()
-    end,
-})
-
-UtilTab:CreateButton({
-    Name = "💀 DESTROY GUI",
-    Callback = function()
-        Rayfield:Destroy()
-        ESPFolder:Destroy()
-    end,
-})
-
--- 🎉 УВЕДОМЛЕНИЕ О ЗАГРУЗКЕ
-Rayfield:Notify({
-    Title = "💀 DEATH BALL GOD MODE ACTIVATED",
-    Content = "ALL SYSTEMS READY FOR DOMINATION!",
-    Duration = 6,
-    Image = nil
-})
-
-print("🎮 DEATH BALL GOD MODE CHEAT LOADED - YOU ARE NOW UNBEATABLE!")
-print("⚡ Features: Smart Auto Parry, Advanced ESP, God Mode, Fly & More!")
-print("🔧 Auto-detected game mechanics for optimal performance!")
-
--- ⚡ АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ПРИ СМЕНЕ ПЕРСОНАЖА
-player.CharacterAdded:Connect(function(newChar)
-    character = newChar
-    humanoid = newChar:WaitForChild("Humanoid")
-    root = newChar:WaitForChild("HumanoidRootPart")
-    task.wait(1)
+UtilTab:Button("🔄 ОБНОВИТЬ ДАННЫЕ", function()
     Game = DetectGame()
 end)
+
+UtilTab:Button("💀 УДАЛИТЬ ГУЙ", function()
+    Library:Destroy()
+    ESPFolder:Destroy()
+end)
+
+print("✅ DEATH BALL GOD MODE АКТИВИРОВАН!")
+print("🔥 Интерфейс должен быть виден сейчас!")
